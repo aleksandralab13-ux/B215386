@@ -1,34 +1,217 @@
 ---
-title: "Assessment"
+title: "Formative Assessment"
 output: html_document
-date: "2025-10-31"
+date: "2025-11-14"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
 ```
 
-## R Markdown
+## Topic:
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+I have chosen to look at the trends in prescribing antidepressants (BNF 0403) before (2019) during (2020-2021) and after (2022) COVID in Scotland to see whether COVID had an effect on antidepressant prescriptions. So far I have made a table which shows the top 10 most prescribed antidepressants in 2020 and a plot showing the total antidepressant prescriptions in 2020.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Next Steps:
 
-```{r cars}
-summary(cars)
+Next I am going to add bars for 2019, 2021 and 2022 and make 1-2 more plots/graphs. I am going to calculate the top 10 most prescribed antidepressants for 2019, 2021 and 2022 next and combine this into one table showing the top 10 most prescribed antidepressants between 2019-2022 as I plan on comparing whether the most prescribed antidepressants differ between 2019-2022. I'm also going to try and tidy up my code.
+
+
+```{r, include = FALSE}
+#load libraries
+library(tidyverse)
+library(janitor)
+library(gt)
+library(here)
+library(dplyr)
 ```
 
-## Including Plots
+```{r, include = FALSE}
+#load 2020 data
+jan20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/e5c841f2-3e16-428b-97db-0798ec7a5fb4/download/pitc202001.csv") %>% 
+  clean_names()
+jan20
 
-You can also embed plots, for example:
+feb20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/af121e7c-4124-4955-92e9-a9580ccd469e/download/pitc202002.csv")%>% 
+  clean_names()
+feb20
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+march20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/9581bd8d-5568-4462-93a6-6d7bfbbe7cbc/download/pitc202003.csv")%>% 
+  clean_names()
+march20
+
+april20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/9cdc0526-21ab-43de-b832-bc032cd31b24/download/pitc202004.csv")%>% 
+  clean_names()
+april20
+
+may20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/f2ffa7b3-3f93-470a-8125-880afb9aafe0/download/pitc202005.csv")%>% 
+  clean_names()
+may20
+
+june20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/64131d22-ab47-43ff-9674-ebe8ed7edbd7/download/pitc202006.csv")%>% 
+  clean_names()
+june20
+
+july20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/80b6ddb1-f09b-4d76-9927-da1e118b01ff/download/pitc202007.csv")%>% 
+  clean_names()
+july20
+
+august20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/5fd5f56e-d1d2-4f22-b4f7-224fbd50dca3/download/pitc202008.csv")%>% 
+  clean_names()
+august20
+
+sept20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/e1b0cfdd-d184-4ebc-bd93-f1a10d84ead0/download/pitc202009.csv")%>% 
+  clean_names()
+sept20
+
+oct20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/83bf4892-d246-41f8-a6ca-d44d18e2a2ca/download/pitc202010.csv")%>% 
+  clean_names()
+oct20
+
+nov20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/ab8aa642-2562-4abb-a360-5c5f9e7e349c/download/pitc202011.csv")%>% 
+  clean_names()
+nov20
+
+dec20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/0c033702-4d88-4f2d-989c-a709b1f4529e/download/pitc202012.csv")%>% 
+  clean_names()
+dec20
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r,include = FALSE}
+#select bnf_item_code + paid items and filter out antidepressants
+jan20_ad <- jan20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_jan20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
 
-```{r}
-1+1+1
+feb20_ad <- feb20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_feb20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+march20_ad <- march20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_mar20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+april20_ad <- april20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_apr20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+may20_ad <- may20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_may20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+june20_ad <- june20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_jun20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+july20_ad <- july20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_jul20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+august20_ad <- august20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_aug20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+sept20_ad <- sept20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_sep20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+oct20_ad <- oct20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_oct20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+nov20_ad <- nov20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_nov20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
+
+dec20_ad <- dec20 %>% 
+select(bnf_item_code, number_of_paid_items) %>% 
+filter(startsWith(bnf_item_code, "0403")) %>% 
+group_by(bnf_item_code) %>% 
+summarise(paid_items_dec20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
 ```
 
+```{r, include = FALSE}
+#join data
+data2020 <- jan20_ad %>%
+  full_join(feb20_ad, by = "bnf_item_code") %>% 
+  full_join(march20_ad, by = "bnf_item_code") %>% 
+  full_join(april20_ad, by = "bnf_item_code") %>% 
+  full_join(may20_ad, by = "bnf_item_code") %>% 
+  full_join(june20_ad, by = "bnf_item_code") %>% 
+  full_join(july20_ad, by = "bnf_item_code") %>% 
+  full_join(august20_ad, by = "bnf_item_code") %>%
+  full_join(sept20_ad, by = "bnf_item_code") %>% 
+  full_join(oct20_ad, by = "bnf_item_code") %>% 
+  full_join(nov20_ad, by = "bnf_item_code") %>% 
+  full_join(dec20_ad, by = "bnf_item_code")
+```
+
+
+```{r, include = FALSE}
+#make a single paid items column 
+data2020 <- data2020 %>% 
+  mutate(paid_items_sum2020 = paid_items_jan20 + paid_items_feb20 + paid_items_mar20 + paid_items_apr20 + paid_items_may20 + paid_items_jun20 + paid_items_jul20 + paid_items_aug20 + paid_items_sep20 + paid_items_oct20 + paid_items_nov20 + paid_items_dec20) %>% 
+  select(bnf_item_code, paid_items_sum2020) %>% 
+  filter(!is.na(paid_items_sum2020))
+```
+
+```{r, include = FALSE}
+#total antidepressants in 2020
+antidepressants2020_total <- data2020 %>% 
+  summarise(total = sum(paid_items_sum2020, na.rm = TRUE))
+```
+
+```{r, echo=FALSE}
+#table
+antidepressants2020_table <- data2020 %>% 
+  mutate(paid_items_sum2020 = as.numeric(paid_items_sum2020)) %>% 
+arrange(desc(paid_items_sum2020)) %>% 
+  mutate(rank = row_number()) %>% 
+  select(rank, bnf_item_code, paid_items_sum2020) %>% 
+  slice_head(n = 10)
+
+antidepressants2020_table %>% 
+  gt() %>% 
+  tab_header(title = "Antidepressants (BNF 0403) 2020") %>% 
+  cols_label(rank = "Rank", bnf_item_code = "BNF Code", paid_items_sum2020 = "Quantity") %>% 
+  fmt_number(columns = paid_items_sum2020, decimals = 0, use_seps = TRUE) %>% 
+  opt_stylize() %>% 
+  tab_options(table.font.size = px(14)) 
+  
+```
+
+```{r, echo = FALSE}
+antidepressants_plot_2020 <- antidepressants2020_total %>% 
+  mutate(year = "2020") %>% 
+  ggplot(aes(x = year, y = total))+
+  geom_col(width = 0.6)+
+  geom_text(aes(label = scales::comma(total)), 
+vjust = -0.3, size = 4) +
+  scale_y_continuous(labels = scales::comma, expand = expansion(mult = c(0, 0.05)))+
+  labs(title = "Total Antidepressant Prescriptions (BNF 0403) 2019 - 2022", x = "Year", y = "Quantity")
+
+antidepressants_plot_2020
+
+```
