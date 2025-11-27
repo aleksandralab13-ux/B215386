@@ -10,9 +10,9 @@
 
 
 
-<meta name="date" content="2025-11-14" />
+<meta name="date" content="2025-11-26" />
 
-<title>Formative Assessment</title>
+<title>Did COVID-19 Have an Effect on Antidepressant Prescriptions in Scotland?</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -349,51 +349,147 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Formative Assessment</h1>
-<h4 class="date">2025-11-14</h4>
+<h1 class="title toc-ignore">Did COVID-19 Have an Effect on
+Antidepressant Prescriptions in Scotland?</h1>
+<h4 class="date">2025-11-26</h4>
 
 </div>
 
-
-<div id="topic" class="section level2">
-<h2>Topic:</h2>
-<p>I have chosen to look at the trends in prescribing antidepressants
-(BNF 0403) before (2019) during (2020-2021) and after (2022) COVID in
-Scotland to see whether COVID had an effect on antidepressant
-prescriptions. So far I have made a table which shows the top 10 most
-prescribed antidepressants in 2020 and a plot showing the total
-antidepressant prescriptions in 2020.</p>
+<div id="TOC">
+<ul>
+<li><a href="#introduction" id="toc-introduction">Introduction:</a></li>
+<li><a href="#data-loading" id="toc-data-loading">Data Loading:</a></li>
+<li><a href="#results" id="toc-results">Results:</a>
+<ul>
+<li><a href="#figure-1" id="toc-figure-1">Figure 1:</a></li>
+<li><a href="#figure-2" id="toc-figure-2">Figure 2:</a></li>
+<li><a href="#interpretation-of-results" id="toc-interpretation-of-results">Interpretation of Results:</a></li>
+<li><a href="#figure-3" id="toc-figure-3">Figure 3:</a></li>
+<li><a href="#figure-4" id="toc-figure-4">Figure 4:</a></li>
+<li><a href="#interpretation-of-results-1" id="toc-interpretation-of-results-1">Interpretation of Results:</a></li>
+</ul></li>
+<li><a href="#conclusion" id="toc-conclusion">Conclusion:</a></li>
+<li><a href="#references" id="toc-references">References:</a></li>
+</ul>
 </div>
-<div id="next-steps" class="section level2">
-<h2>Next Steps:</h2>
-<p>Next I am going to add bars for 2019, 2021 and 2022 and make 1-2 more
-plots/graphs. I am going to calculate the top 10 most prescribed
-antidepressants for 2019, 2021 and 2022 next and combine this into one
-table showing the top 10 most prescribed antidepressants between
-2019-2022 as I plan on comparing whether the most prescribed
-antidepressants differ between 2019-2022. I’m also going to try and tidy
-up my code.</p>
-<div id="hfbqtzsxbq" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#hfbqtzsxbq table {
+
+<div id="introduction" class="section level1">
+<h1>Introduction:</h1>
+<p>I’ve chosen to look at the trends in prescribing antidepressants
+before (2019) during (2020 - 2021) and after (2022) the COVID - 19
+pandemic in Scotland to determine whether COVID had an effect on
+antidepressant prescriptions. I chose to look at this as during the
+pandemic the number of people with depression likely increased so I
+thought it would be interesting to investigate if/how COVID influenced
+antidepressant prescriptions. In addition, I looked at the most
+prescribed antidepressants each year to compare whether or not these
+changed over time.</p>
+<p>Antidepressants are medications mainly used to treat depression but
+they’re also used for a range of other conditions including Generalised
+Anxiety Disorder (GAD), Obsessive Compulsive Disorder (OCD),
+Post-Traumatic Stress Disorder (PTSD), eating disorders and neuropathic
+pain (National Health Service, no date). Many different types exist
+including Selective Serotonin Reuptake Inhibitors (SSRIs),
+Serotonin-Noradrenaline Reuptake Inhibitors (SNRIs), Noradrenaline and
+Specific Serotonergic Antidepressants (NASSAs), Tricyclic
+Antidepressants (TCAs) and Serotonin Antagonists and Reuptake Inhibitors
+(SARIs), there are also different forms e.g. tablets, capsules, liquid,
+patches and drops (Mind, 2020; National Health Service, no date).</p>
+<p>All data is taken from/can be accessed at: <a href="https://www.opendata.nhs.scot/dataset/prescriptions-in-the-community" class="uri">https://www.opendata.nhs.scot/dataset/prescriptions-in-the-community</a>.
+(Here I’ve used data from January to December, 2019 to 2022).</p>
+</div>
+<div id="data-loading" class="section level1">
+<h1>Data Loading:</h1>
+<pre class="r"><code>#Load the libraries
+library(tidyverse)
+library(janitor)
+library(gt)
+library(here)
+library(scales)
+library(vroom)</code></pre>
+<pre class="r"><code>#Load 2019-2022 Data using functions and loops and freeing the memory to help prevent crashing while knitting.
+#Make function to read all CSV files for one year
+read_year_data &lt;- function(year) {
+files &lt;- list.files(here(&quot;data&quot;, as.character(year)), pattern = &quot;\\.csv$&quot;, full.names = TRUE)
+#Make a list to store each file in  
+data_list &lt;- vector(&quot;list&quot;, length(files))
+#Create loop to repeat this code for every file for that year 
+for(x in seq_along(files)) {
+#Use vroom() to read files quicker and clean_names to get clean column names
+df &lt;- vroom(files[x], delim = &quot;,&quot;, col_types = NULL, progress = FALSE) %&gt;% clean_names()
+#Store the cleaned data in a list
+data_list[[x]] &lt;- df
+#Free memory after each file using rm() and gc(), invisible(gc()) so that running gc() doesn&#39;t show a table of memory usage after knitting, } to close loop
+rm(df)
+invisible(gc())}
+#Combine all files for the year into one data frame, } to close function
+bind_rows(data_list)}
+#Make another function to filter out antidepressants for each year
+antidep_by_year &lt;- function(df, year) {
+  df %&gt;% 
+    select(bnf_item_code, bnf_item_description, number_of_paid_items) %&gt;% 
+    filter(startsWith(bnf_item_code, &quot;0403&quot;)) %&gt;% 
+    group_by(bnf_item_code, bnf_item_description) %&gt;% 
+    summarise(paid_items = sum(number_of_paid_items, na.rm = TRUE), .groups = &quot;drop&quot;) %&gt;% 
+    mutate(year = year)}
+#Create a loop for 2019-2022 and list to store the results for each year
+years &lt;- 2019:2022
+antidep_list &lt;- vector(&quot;list&quot;, length(years))
+for(x in seq_along(years)) {
+  year &lt;- years[x]
+#Load and combine all files for one year
+data_year &lt;- read_year_data(year)
+#Filter antidepressants for each year and store in list
+antidep_list[[x]] &lt;- antidep_by_year(data_year, as.character(year))
+#Free the memory again, } to close loop
+rm(data_year)
+invisible(gc())}
+#Combine all years into one and then free the memory again
+antidep2019_2022 &lt;- bind_rows(antidep_list)
+rm(antidep_list)
+invisible(gc())</code></pre>
+</div>
+<div id="results" class="section level1">
+<h1>Results:</h1>
+<div id="figure-1" class="section level2">
+<h2>Figure 1:</h2>
+<pre class="r"><code>#Use gt()to make a stacked table showing the top 10 antidepressants each year (2019-2022) and make it prettier.
+antideptop10 &lt;- antidep2019_2022 %&gt;% 
+  group_by(year) %&gt;% 
+  arrange(desc(paid_items)) %&gt;% 
+  slice_head(n = 10) %&gt;% 
+  ungroup() %&gt;% 
+  mutate(rank = row_number(), .by = year) %&gt;% 
+  arrange(year, rank) %&gt;% 
+  gt(groupname_col = &quot;year&quot;) %&gt;% 
+  tab_header(title = &quot;Top 10 Most Prescribed Antidepressants Each Year (2019-2022)&quot;) %&gt;% 
+  cols_label(rank = &quot;Rank&quot;, year = &quot;Year&quot;, bnf_item_code = &quot;BNF Code&quot;, bnf_item_description = &quot;BNF Item Description&quot;, paid_items = &quot;Quantity&quot;) %&gt;% 
+  fmt_number(columns = paid_items, decimals = 0, use_seps = TRUE) %&gt;% 
+  opt_stylize() %&gt;% 
+  tab_options(table.font.size = px(16), row_group.font.weight = &quot;bold&quot;, row_group.background.color = &quot;lavender&quot;, heading.background.color = &quot;#f0f0f0&quot;)
+#Print result
+antideptop10</code></pre>
+<div id="vdtjhjzvuy" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#vdtjhjzvuy table {
 font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
-#hfbqtzsxbq thead, #hfbqtzsxbq tbody, #hfbqtzsxbq tfoot, #hfbqtzsxbq tr, #hfbqtzsxbq td, #hfbqtzsxbq th {
+#vdtjhjzvuy thead, #vdtjhjzvuy tbody, #vdtjhjzvuy tfoot, #vdtjhjzvuy tr, #vdtjhjzvuy td, #vdtjhjzvuy th {
 border-style: none;
 }
-#hfbqtzsxbq p {
+#vdtjhjzvuy p {
 margin: 0;
 padding: 0;
 }
-#hfbqtzsxbq .gt_table {
+#vdtjhjzvuy .gt_table {
 display: table;
 border-collapse: collapse;
 line-height: normal;
 margin-left: auto;
 margin-right: auto;
 color: #333333;
-font-size: 14px;
+font-size: 16px;
 font-weight: normal;
 font-style: normal;
 background-color: #FFFFFF;
@@ -411,11 +507,11 @@ border-left-style: none;
 border-left-width: 2px;
 border-left-color: #D3D3D3;
 }
-#hfbqtzsxbq .gt_caption {
+#vdtjhjzvuy .gt_caption {
 padding-top: 4px;
 padding-bottom: 4px;
 }
-#hfbqtzsxbq .gt_title {
+#vdtjhjzvuy .gt_title {
 color: #333333;
 font-size: 125%;
 font-weight: initial;
@@ -426,7 +522,7 @@ padding-right: 5px;
 border-bottom-color: #FFFFFF;
 border-bottom-width: 0;
 }
-#hfbqtzsxbq .gt_subtitle {
+#vdtjhjzvuy .gt_subtitle {
 color: #333333;
 font-size: 85%;
 font-weight: initial;
@@ -437,8 +533,8 @@ padding-right: 5px;
 border-top-color: #FFFFFF;
 border-top-width: 0;
 }
-#hfbqtzsxbq .gt_heading {
-background-color: #FFFFFF;
+#vdtjhjzvuy .gt_heading {
+background-color: #F0F0F0;
 text-align: center;
 border-bottom-color: #FFFFFF;
 border-left-style: none;
@@ -448,12 +544,12 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#hfbqtzsxbq .gt_bottom_border {
+#vdtjhjzvuy .gt_bottom_border {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #0076BA;
 }
-#hfbqtzsxbq .gt_col_headings {
+#vdtjhjzvuy .gt_col_headings {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #0076BA;
@@ -467,7 +563,7 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#hfbqtzsxbq .gt_col_heading {
+#vdtjhjzvuy .gt_col_heading {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -486,7 +582,7 @@ padding-left: 5px;
 padding-right: 5px;
 overflow-x: hidden;
 }
-#hfbqtzsxbq .gt_column_spanner_outer {
+#vdtjhjzvuy .gt_column_spanner_outer {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -497,13 +593,13 @@ padding-bottom: 0;
 padding-left: 4px;
 padding-right: 4px;
 }
-#hfbqtzsxbq .gt_column_spanner_outer:first-child {
+#vdtjhjzvuy .gt_column_spanner_outer:first-child {
 padding-left: 0;
 }
-#hfbqtzsxbq .gt_column_spanner_outer:last-child {
+#vdtjhjzvuy .gt_column_spanner_outer:last-child {
 padding-right: 0;
 }
-#hfbqtzsxbq .gt_column_spanner {
+#vdtjhjzvuy .gt_column_spanner {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #0076BA;
@@ -514,18 +610,18 @@ overflow-x: hidden;
 display: inline-block;
 width: 100%;
 }
-#hfbqtzsxbq .gt_spanner_row {
+#vdtjhjzvuy .gt_spanner_row {
 border-bottom-style: hidden;
 }
-#hfbqtzsxbq .gt_group_heading {
+#vdtjhjzvuy .gt_group_heading {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 color: #333333;
-background-color: #FFFFFF;
+background-color: #E6E6FA;
 font-size: 100%;
-font-weight: initial;
+font-weight: bold;
 text-transform: inherit;
 border-top-style: solid;
 border-top-width: 2px;
@@ -542,12 +638,12 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 text-align: left;
 }
-#hfbqtzsxbq .gt_empty_group_heading {
+#vdtjhjzvuy .gt_empty_group_heading {
 padding: 0.5px;
 color: #333333;
-background-color: #FFFFFF;
+background-color: #E6E6FA;
 font-size: 100%;
-font-weight: initial;
+font-weight: bold;
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #0076BA;
@@ -556,13 +652,13 @@ border-bottom-width: 2px;
 border-bottom-color: #0076BA;
 vertical-align: middle;
 }
-#hfbqtzsxbq .gt_from_md > :first-child {
+#vdtjhjzvuy .gt_from_md > :first-child {
 margin-top: 0;
 }
-#hfbqtzsxbq .gt_from_md > :last-child {
+#vdtjhjzvuy .gt_from_md > :last-child {
 margin-bottom: 0;
 }
-#hfbqtzsxbq .gt_row {
+#vdtjhjzvuy .gt_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -580,7 +676,7 @@ border-right-color: #89D3FE;
 vertical-align: middle;
 overflow-x: hidden;
 }
-#hfbqtzsxbq .gt_stub {
+#vdtjhjzvuy .gt_stub {
 color: #FFFFFF;
 background-color: #0076BA;
 font-size: 100%;
@@ -592,7 +688,7 @@ border-right-color: #0076BA;
 padding-left: 5px;
 padding-right: 5px;
 }
-#hfbqtzsxbq .gt_stub_row_group {
+#vdtjhjzvuy .gt_stub_row_group {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -605,13 +701,13 @@ padding-left: 5px;
 padding-right: 5px;
 vertical-align: top;
 }
-#hfbqtzsxbq .gt_row_group_first td {
+#vdtjhjzvuy .gt_row_group_first td {
 border-top-width: 2px;
 }
-#hfbqtzsxbq .gt_row_group_first th {
+#vdtjhjzvuy .gt_row_group_first th {
 border-top-width: 2px;
 }
-#hfbqtzsxbq .gt_summary_row {
+#vdtjhjzvuy .gt_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -620,14 +716,14 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#hfbqtzsxbq .gt_first_summary_row {
+#vdtjhjzvuy .gt_first_summary_row {
 border-top-style: solid;
 border-top-color: #0076BA;
 }
-#hfbqtzsxbq .gt_first_summary_row.thick {
+#vdtjhjzvuy .gt_first_summary_row.thick {
 border-top-width: 2px;
 }
-#hfbqtzsxbq .gt_last_summary_row {
+#vdtjhjzvuy .gt_last_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -636,7 +732,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #0076BA;
 }
-#hfbqtzsxbq .gt_grand_summary_row {
+#vdtjhjzvuy .gt_grand_summary_row {
 color: #333333;
 background-color: #89D3FE;
 text-transform: inherit;
@@ -645,7 +741,7 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#hfbqtzsxbq .gt_first_grand_summary_row {
+#vdtjhjzvuy .gt_first_grand_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -654,7 +750,7 @@ border-top-style: double;
 border-top-width: 6px;
 border-top-color: #0076BA;
 }
-#hfbqtzsxbq .gt_last_grand_summary_row_top {
+#vdtjhjzvuy .gt_last_grand_summary_row_top {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -663,10 +759,10 @@ border-bottom-style: double;
 border-bottom-width: 6px;
 border-bottom-color: #0076BA;
 }
-#hfbqtzsxbq .gt_striped {
+#vdtjhjzvuy .gt_striped {
 background-color: #F4F4F4;
 }
-#hfbqtzsxbq .gt_table_body {
+#vdtjhjzvuy .gt_table_body {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #0076BA;
@@ -674,7 +770,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #0076BA;
 }
-#hfbqtzsxbq .gt_footnotes {
+#vdtjhjzvuy .gt_footnotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -687,7 +783,7 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#hfbqtzsxbq .gt_footnote {
+#vdtjhjzvuy .gt_footnote {
 margin: 0px;
 font-size: 90%;
 padding-top: 4px;
@@ -695,7 +791,7 @@ padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#hfbqtzsxbq .gt_sourcenotes {
+#vdtjhjzvuy .gt_sourcenotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -708,115 +804,1438 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#hfbqtzsxbq .gt_sourcenote {
+#vdtjhjzvuy .gt_sourcenote {
 font-size: 90%;
 padding-top: 4px;
 padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#hfbqtzsxbq .gt_left {
+#vdtjhjzvuy .gt_left {
 text-align: left;
 }
-#hfbqtzsxbq .gt_center {
+#vdtjhjzvuy .gt_center {
 text-align: center;
 }
-#hfbqtzsxbq .gt_right {
+#vdtjhjzvuy .gt_right {
 text-align: right;
 font-variant-numeric: tabular-nums;
 }
-#hfbqtzsxbq .gt_font_normal {
+#vdtjhjzvuy .gt_font_normal {
 font-weight: normal;
 }
-#hfbqtzsxbq .gt_font_bold {
+#vdtjhjzvuy .gt_font_bold {
 font-weight: bold;
 }
-#hfbqtzsxbq .gt_font_italic {
+#vdtjhjzvuy .gt_font_italic {
 font-style: italic;
 }
-#hfbqtzsxbq .gt_super {
+#vdtjhjzvuy .gt_super {
 font-size: 65%;
 }
-#hfbqtzsxbq .gt_footnote_marks {
+#vdtjhjzvuy .gt_footnote_marks {
 font-size: 75%;
 vertical-align: 0.4em;
 position: initial;
 }
-#hfbqtzsxbq .gt_asterisk {
+#vdtjhjzvuy .gt_asterisk {
 font-size: 100%;
 vertical-align: 0;
 }
-#hfbqtzsxbq .gt_indent_1 {
+#vdtjhjzvuy .gt_indent_1 {
 text-indent: 5px;
 }
-#hfbqtzsxbq .gt_indent_2 {
+#vdtjhjzvuy .gt_indent_2 {
 text-indent: 10px;
 }
-#hfbqtzsxbq .gt_indent_3 {
+#vdtjhjzvuy .gt_indent_3 {
 text-indent: 15px;
 }
-#hfbqtzsxbq .gt_indent_4 {
+#vdtjhjzvuy .gt_indent_4 {
 text-indent: 20px;
 }
-#hfbqtzsxbq .gt_indent_5 {
+#vdtjhjzvuy .gt_indent_5 {
 text-indent: 25px;
 }
-#hfbqtzsxbq .katex-display {
+#vdtjhjzvuy .katex-display {
 display: inline-flex !important;
 margin-bottom: 0.75em !important;
 }
-#hfbqtzsxbq div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#vdtjhjzvuy div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 height: 0px !important;
 }
 </style>
 <table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
   <thead>
     <tr class="gt_heading">
-      <td colspan="3" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Antidepressants (BNF 0403) 2020</td>
+      <td colspan="4" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Top 10 Most Prescribed Antidepressants Each Year (2019-2022)</td>
     </tr>
     
     <tr class="gt_col_headings">
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="rank">Rank</th>
       <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="bnf_item_code">BNF Code</th>
-      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="paid_items_sum2020">Quantity</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="1" colspan="1" scope="col" id="bnf_item_description">BNF Item Description</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="paid_items">Quantity</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="rank">Rank</th>
     </tr>
   </thead>
   <tbody class="gt_table_body">
-    <tr><td headers="rank" class="gt_row gt_right">1</td>
-<td headers="bnf_item_code" class="gt_row gt_left">0403030E0AAAAAA</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right">882,062</td></tr>
-    <tr><td headers="rank" class="gt_row gt_right gt_striped">2</td>
-<td headers="bnf_item_code" class="gt_row gt_left gt_striped">0403010B0AAAGAG</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right gt_striped">831,625</td></tr>
-    <tr><td headers="rank" class="gt_row gt_right">3</td>
-<td headers="bnf_item_code" class="gt_row gt_left">0403030Q0AAAAAA</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right">826,953</td></tr>
-    <tr><td headers="rank" class="gt_row gt_right gt_striped">4</td>
-<td headers="bnf_item_code" class="gt_row gt_left gt_striped">0403030Q0AAABAB</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right gt_striped">797,363</td></tr>
-    <tr><td headers="rank" class="gt_row gt_right">5</td>
-<td headers="bnf_item_code" class="gt_row gt_left">0403030D0AAAAAA</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right">601,153</td></tr>
-    <tr><td headers="rank" class="gt_row gt_right gt_striped">6</td>
-<td headers="bnf_item_code" class="gt_row gt_left gt_striped">0403010B0AAAHAH</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right gt_striped">353,233</td></tr>
-    <tr><td headers="rank" class="gt_row gt_right">7</td>
-<td headers="bnf_item_code" class="gt_row gt_left">0403040X0AAANAN</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right">324,988</td></tr>
-    <tr><td headers="rank" class="gt_row gt_right gt_striped">8</td>
-<td headers="bnf_item_code" class="gt_row gt_left gt_striped">0403040X0AAAAAA</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right gt_striped">309,529</td></tr>
-    <tr><td headers="rank" class="gt_row gt_right">9</td>
-<td headers="bnf_item_code" class="gt_row gt_left">0403040X0AAAPAP</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right">299,670</td></tr>
-    <tr><td headers="rank" class="gt_row gt_right gt_striped">10</td>
-<td headers="bnf_item_code" class="gt_row gt_left gt_striped">0403030D0AAABAB</td>
-<td headers="paid_items_sum2020" class="gt_row gt_right gt_striped">297,196</td></tr>
+    <tr class="gt_group_heading_row">
+      <th colspan="4" class="gt_group_heading" scope="colgroup" id="2019">2019</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="2019  bnf_item_code" class="gt_row gt_left">0403030E0AAAAAA</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left">FLUOXETINE HCL_CAP 20MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right">870,053</td>
+<td headers="2019  rank" class="gt_row gt_right">1</td></tr>
+    <tr><td headers="2019  bnf_item_code" class="gt_row gt_left gt_striped">0403010B0AAAGAG</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left gt_striped">AMITRIPTYLINE HCL_TAB 10MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right gt_striped">790,899</td>
+<td headers="2019  rank" class="gt_row gt_right gt_striped">2</td></tr>
+    <tr><td headers="2019  bnf_item_code" class="gt_row gt_left">0403030Q0AAAAAA</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left">SERTRALINE HCL_TAB 50MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right">775,274</td>
+<td headers="2019  rank" class="gt_row gt_right">3</td></tr>
+    <tr><td headers="2019  bnf_item_code" class="gt_row gt_left gt_striped">0403030Q0AAABAB</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left gt_striped">SERTRALINE HCL_TAB 100MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right gt_striped">725,689</td>
+<td headers="2019  rank" class="gt_row gt_right gt_striped">4</td></tr>
+    <tr><td headers="2019  bnf_item_code" class="gt_row gt_left">0403030D0AAAAAA</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left">CITALOPRAM HYDROB_TAB 20MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right">616,030</td>
+<td headers="2019  rank" class="gt_row gt_right">5</td></tr>
+    <tr><td headers="2019  bnf_item_code" class="gt_row gt_left gt_striped">0403010B0AAAHAH</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left gt_striped">AMITRIPTYLINE HCL_TAB 25MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right gt_striped">342,068</td>
+<td headers="2019  rank" class="gt_row gt_right gt_striped">6</td></tr>
+    <tr><td headers="2019  bnf_item_code" class="gt_row gt_left">0403030D0AAABAB</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left">CITALOPRAM HYDROB_TAB 10MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right">307,006</td>
+<td headers="2019  rank" class="gt_row gt_right">7</td></tr>
+    <tr><td headers="2019  bnf_item_code" class="gt_row gt_left gt_striped">0403040X0AAANAN</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 15MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right gt_striped">301,998</td>
+<td headers="2019  rank" class="gt_row gt_right gt_striped">8</td></tr>
+    <tr><td headers="2019  bnf_item_code" class="gt_row gt_left">0403040X0AAAAAA</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left">MIRTAZAPINE_TAB 30MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right">297,018</td>
+<td headers="2019  rank" class="gt_row gt_right">9</td></tr>
+    <tr><td headers="2019  bnf_item_code" class="gt_row gt_left gt_striped">0403040X0AAAPAP</td>
+<td headers="2019  bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 45MG</td>
+<td headers="2019  paid_items" class="gt_row gt_right gt_striped">279,887</td>
+<td headers="2019  rank" class="gt_row gt_right gt_striped">10</td></tr>
+    <tr class="gt_group_heading_row">
+      <th colspan="4" class="gt_group_heading" scope="colgroup" id="2020">2020</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="2020  bnf_item_code" class="gt_row gt_left">0403030E0AAAAAA</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left">FLUOXETINE HCL_CAP 20MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right">882,062</td>
+<td headers="2020  rank" class="gt_row gt_right">1</td></tr>
+    <tr><td headers="2020  bnf_item_code" class="gt_row gt_left gt_striped">0403010B0AAAGAG</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left gt_striped">AMITRIPTYLINE HCL_TAB 10MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right gt_striped">831,625</td>
+<td headers="2020  rank" class="gt_row gt_right gt_striped">2</td></tr>
+    <tr><td headers="2020  bnf_item_code" class="gt_row gt_left">0403030Q0AAAAAA</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left">SERTRALINE HCL_TAB 50MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right">826,953</td>
+<td headers="2020  rank" class="gt_row gt_right">3</td></tr>
+    <tr><td headers="2020  bnf_item_code" class="gt_row gt_left gt_striped">0403030Q0AAABAB</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left gt_striped">SERTRALINE HCL_TAB 100MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right gt_striped">797,363</td>
+<td headers="2020  rank" class="gt_row gt_right gt_striped">4</td></tr>
+    <tr><td headers="2020  bnf_item_code" class="gt_row gt_left">0403030D0AAAAAA</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left">CITALOPRAM HYDROB_TAB 20MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right">601,153</td>
+<td headers="2020  rank" class="gt_row gt_right">5</td></tr>
+    <tr><td headers="2020  bnf_item_code" class="gt_row gt_left gt_striped">0403010B0AAAHAH</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left gt_striped">AMITRIPTYLINE HCL_TAB 25MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right gt_striped">353,233</td>
+<td headers="2020  rank" class="gt_row gt_right gt_striped">6</td></tr>
+    <tr><td headers="2020  bnf_item_code" class="gt_row gt_left">0403040X0AAANAN</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left">MIRTAZAPINE_TAB 15MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right">324,988</td>
+<td headers="2020  rank" class="gt_row gt_right">7</td></tr>
+    <tr><td headers="2020  bnf_item_code" class="gt_row gt_left gt_striped">0403040X0AAAAAA</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 30MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right gt_striped">309,529</td>
+<td headers="2020  rank" class="gt_row gt_right gt_striped">8</td></tr>
+    <tr><td headers="2020  bnf_item_code" class="gt_row gt_left">0403040X0AAAPAP</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left">MIRTAZAPINE_TAB 45MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right">299,670</td>
+<td headers="2020  rank" class="gt_row gt_right">9</td></tr>
+    <tr><td headers="2020  bnf_item_code" class="gt_row gt_left gt_striped">0403030D0AAABAB</td>
+<td headers="2020  bnf_item_description" class="gt_row gt_left gt_striped">CITALOPRAM HYDROB_TAB 10MG</td>
+<td headers="2020  paid_items" class="gt_row gt_right gt_striped">297,196</td>
+<td headers="2020  rank" class="gt_row gt_right gt_striped">10</td></tr>
+    <tr class="gt_group_heading_row">
+      <th colspan="4" class="gt_group_heading" scope="colgroup" id="2021">2021</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="2021  bnf_item_code" class="gt_row gt_left">0403030E0AAAAAA</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left">FLUOXETINE HCL_CAP 20MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right">900,696</td>
+<td headers="2021  rank" class="gt_row gt_right">1</td></tr>
+    <tr><td headers="2021  bnf_item_code" class="gt_row gt_left gt_striped">0403030Q0AAAAAA</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left gt_striped">SERTRALINE HCL_TAB 50MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right gt_striped">890,068</td>
+<td headers="2021  rank" class="gt_row gt_right gt_striped">2</td></tr>
+    <tr><td headers="2021  bnf_item_code" class="gt_row gt_left">0403010B0AAAGAG</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left">AMITRIPTYLINE HCL_TAB 10MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right">881,309</td>
+<td headers="2021  rank" class="gt_row gt_right">3</td></tr>
+    <tr><td headers="2021  bnf_item_code" class="gt_row gt_left gt_striped">0403030Q0AAABAB</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left gt_striped">SERTRALINE HCL_TAB 100MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right gt_striped">868,234</td>
+<td headers="2021  rank" class="gt_row gt_right gt_striped">4</td></tr>
+    <tr><td headers="2021  bnf_item_code" class="gt_row gt_left">0403030D0AAAAAA</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left">CITALOPRAM HYDROB_TAB 20MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right">593,771</td>
+<td headers="2021  rank" class="gt_row gt_right">5</td></tr>
+    <tr><td headers="2021  bnf_item_code" class="gt_row gt_left gt_striped">0403010B0AAAHAH</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left gt_striped">AMITRIPTYLINE HCL_TAB 25MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right gt_striped">356,368</td>
+<td headers="2021  rank" class="gt_row gt_right gt_striped">6</td></tr>
+    <tr><td headers="2021  bnf_item_code" class="gt_row gt_left">0403040X0AAANAN</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left">MIRTAZAPINE_TAB 15MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right">347,586</td>
+<td headers="2021  rank" class="gt_row gt_right">7</td></tr>
+    <tr><td headers="2021  bnf_item_code" class="gt_row gt_left gt_striped">0403040X0AAAAAA</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 30MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right gt_striped">318,306</td>
+<td headers="2021  rank" class="gt_row gt_right gt_striped">8</td></tr>
+    <tr><td headers="2021  bnf_item_code" class="gt_row gt_left">0403040X0AAAPAP</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left">MIRTAZAPINE_TAB 45MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right">309,613</td>
+<td headers="2021  rank" class="gt_row gt_right">9</td></tr>
+    <tr><td headers="2021  bnf_item_code" class="gt_row gt_left gt_striped">0403030D0AAABAB</td>
+<td headers="2021  bnf_item_description" class="gt_row gt_left gt_striped">CITALOPRAM HYDROB_TAB 10MG</td>
+<td headers="2021  paid_items" class="gt_row gt_right gt_striped">297,984</td>
+<td headers="2021  rank" class="gt_row gt_right gt_striped">10</td></tr>
+    <tr class="gt_group_heading_row">
+      <th colspan="4" class="gt_group_heading" scope="colgroup" id="2022">2022</th>
+    </tr>
+    <tr class="gt_row_group_first"><td headers="2022  bnf_item_code" class="gt_row gt_left">0403030Q0AAAAAA</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left">SERTRALINE HCL_TAB 50MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right">929,836</td>
+<td headers="2022  rank" class="gt_row gt_right">1</td></tr>
+    <tr><td headers="2022  bnf_item_code" class="gt_row gt_left gt_striped">0403030Q0AAABAB</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left gt_striped">SERTRALINE HCL_TAB 100MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right gt_striped">917,341</td>
+<td headers="2022  rank" class="gt_row gt_right gt_striped">2</td></tr>
+    <tr><td headers="2022  bnf_item_code" class="gt_row gt_left">0403010B0AAAGAG</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left">AMITRIPTYLINE HCL_TAB 10MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right">906,081</td>
+<td headers="2022  rank" class="gt_row gt_right">3</td></tr>
+    <tr><td headers="2022  bnf_item_code" class="gt_row gt_left gt_striped">0403030E0AAAAAA</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left gt_striped">FLUOXETINE HCL_CAP 20MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right gt_striped">887,674</td>
+<td headers="2022  rank" class="gt_row gt_right gt_striped">4</td></tr>
+    <tr><td headers="2022  bnf_item_code" class="gt_row gt_left">0403030D0AAAAAA</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left">CITALOPRAM HYDROB_TAB 20MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right">571,208</td>
+<td headers="2022  rank" class="gt_row gt_right">5</td></tr>
+    <tr><td headers="2022  bnf_item_code" class="gt_row gt_left gt_striped">0403040X0AAANAN</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 15MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right gt_striped">362,096</td>
+<td headers="2022  rank" class="gt_row gt_right gt_striped">6</td></tr>
+    <tr><td headers="2022  bnf_item_code" class="gt_row gt_left">0403010B0AAAHAH</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left">AMITRIPTYLINE HCL_TAB 25MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right">353,305</td>
+<td headers="2022  rank" class="gt_row gt_right">7</td></tr>
+    <tr><td headers="2022  bnf_item_code" class="gt_row gt_left gt_striped">0403040X0AAAAAA</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 30MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right gt_striped">322,685</td>
+<td headers="2022  rank" class="gt_row gt_right gt_striped">8</td></tr>
+    <tr><td headers="2022  bnf_item_code" class="gt_row gt_left">0403040X0AAAPAP</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left">MIRTAZAPINE_TAB 45MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right">315,570</td>
+<td headers="2022  rank" class="gt_row gt_right">9</td></tr>
+    <tr><td headers="2022  bnf_item_code" class="gt_row gt_left gt_striped">0403030D0AAABAB</td>
+<td headers="2022  bnf_item_description" class="gt_row gt_left gt_striped">CITALOPRAM HYDROB_TAB 10MG</td>
+<td headers="2022  paid_items" class="gt_row gt_right gt_striped">293,855</td>
+<td headers="2022  rank" class="gt_row gt_right gt_striped">10</td></tr>
   </tbody>
   
 </table>
 </div>
-<p><img role="img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABUAAAAPACAMAAADDuCPrAAAB3VBMVEUAAAAAADUAADoAAF4AAGYANTUANV4ANYQAOjoAOmYAOpAAXqgAZrYzMzM1AAA1NQA1NTU1NV41XoQ1Xqg1hKg1hMk6AAA6ADo6OgA6Ojo6OmY6OpA6ZmY6ZpA6ZrY6kLY6kNtNTU1NTW5NTY5Nbm5Nbo5NbqtNjshZWVleAABeNQBeNTVehKheqMleqOtmAABmADpmOgBmOjpmOpBmZgBmZjpmZmZmZpBmkJBmkLZmkNtmtrZmtttmtv9uTU1ubk1ubo5ujqtujshuq+SENQCEXjWEqISEqMmEyeuOTU2OTW6Obm6Oq6uOyOSOyP+QOgCQOjqQZgCQZjqQZmaQkGaQkLaQtraQttuQ27aQ2/+oXgCoXjWohDWohF6oycmoyeuo68mo6+urbk2rbm6rjm6ryOSr5P+2ZgC2Zjq2Zma2kDq2kGa2kJC2tpC2tra2ttu229u22/+2///Ijk3Ijm7Iq27I5P/I///JhDXJqF7JqITJyevJ6+vbkDrbkGbbtmbbtpDbtrbbttvb25Db27bb29vb2//b/7bb///kq27kyI7kyKvk///rqF7ryYTryajr66jr68nr6+v/tmb/yI7/25D/27b/29v/5Kv/5Mj//7b//8j//9v//+T////b/8a9AAAACXBIWXMAAB2HAAAdhwGP5fFlAAAgAElEQVR4nO3d/4Nl9X3X8Ztt2rKUpK3VFbDQHRBiayuCBpMKq5hqpbWgxBah2lqKGQzahGwE2mYKVYK7FtKG2S8szM7f6j33nnPv57zPOXfOnJnZ132/9vn4IWHu3Jn7Zd/v597vOzsEAEwyU58BAMiKgALARAQUACYioAAwEQEFgIkIKABMREABYCICCgATEVAAmIiAAsBEBBQAJiKgADARAQWAiQgoAExEQAFgoiQB3Z91PXvM3/HZE7Nzr/R9Y3c28I1xv2T+4xePeVYkWtfhAw999yxOY/A6PuZxjmF3ce3vlZft6x8237x+of2Hc/BiPTedgepM08H7T80PfvDlK90TLM5+z7Fuvnn/fKDW1+/e7L7+c/7BS/cvzm3xs0Mnuje7d8MpjDDutHqO1XMQCn4Bff+pge0cWtz54SMSWP/aNAHtXg3xOjz/1umf6sY4Dl+FJ1CnZa992R6uv1sFtDyx8QG98eTA1bRf/saeY713oT7ooSur0+ybj+qsLJ1bnfbQic4vRhHQv4incKRxp9VzrL4fRMktoPM/8aHtHFrcxe++d/Msrn5tkoD2XQ2d6/CL3zv1090Qx01X4XTztCzmIAS0udFXBbT8sx0d0MXfqn1XU/WN1dnvOVbxi5vT3e+7vOs0rU986ESrw9cXYq97CkcYd1o9x+r7QbQkCWhjvhCb137Ddg59a36X7P6jxmPT0m9jQPvO7365cB88ua6M7iyd2HzDlxdib31pbr7/5Kpxi4AWfzxlQDfWp3pYZ3639eDb8Wqaf2N9ObrHqrp0/uX5mXijON3dntOqfs/DH87P0ZsXVgkbONEbT5StrAp97pkryx8c9yc47rR6jtX3g2ghoNXdo/eOGkW7gC5ScvpBO+ZZOrG95nfulX+C1WVbfrUM6Pp0xwa0+rnlX6n77atpv/x9PcfaW/3evXVy5seLE1KF9pn1b7m44USXjwncu35AYPbFt8LJbzbutHqO1feDaCOg80G/eORy+wV09Pqd5Vk6hd9ZZ7MV0PVFnV/Iey4Ul3tsQItf1/rjXf6+5nJ0j7X6/e3Lu9uZ2vL0d+tf03uiN16a1/P+9bHLP7a9cTdBx51Wz7H6fhBtd31Alw/NHRVBw4BWNy/u5Pk+i4DurWIyHNDq7sXqgo4MaNHB1jGrYflPq8vRc6xiPsvLu9+5qveKQ+qf7T3RxU3oi/vlA6rrs3PkNhzntHqO1XMQgvQB/eCp6onWh9Z3aor7WO+/VH19T/2qlv4NXg7GfvkQz241XDeqn73n61fCr13/ksWrQM49fKUM6OKHmjNTT+mNxYtFmpecVCt/8Mb8RsyDr3R/YHFA9aqRe4qXqHQPCZdr4/ntXNKV6txdnHSODg+ql9HMHny5e5nqq6d7yXuvwvYfXs8FGTj9xvw3NZeoE9DVXfh7rxQvUxsZ0HJUyv+uLun666FjrQ5ZjdT8ZDeUrj4vvb9ufgHOv1We2/KCTvg7adNpdY51xEE4TB/Q9dOED185DOVYvU6jfglG/7gt81f+jbzY4zdmxW/q2/7mt597ZRXQgzdaZ2b5S5tnZR9aPTL27G7zi+MPFAc0Ly7pHtK5XBvPb2HgFuhxz1HxMpp7O5epDGjrkvddheEPr+eC9J9+eYmav7riY6DrJ5HuvVI8iT0yoOWYFaMxP/i+YowGjlVr3efd2/RwSX3ee3/d9b/7TPvchoAe91GYTafVOdYRB+Ewe0CL12I096BW21d+r3mUvBvQ5sC99sM9Dwz92ub4zUHzW67/tF7j8jUf9zUHfO1C+YsWp/NA82XnBxbPeq5+7/f6D+lcro3ntxCaUfXt2QnnqPsymuI3FAFtX/KeqzD+4fVckN7TX9vtfTjwoHoW/uJqXpb3L5q/48YFNNxtr09leZtyPUb9x1qqXuVQnN/9Dflp7gps+HXDd+GPGdARp1Uca/NBqOQOaLVe1R3AxYtyFn++6/HeXb7aY/kSjIuHAwFtwnl9/dTAcmmrX7u4rde+9VoUYvECj/cXNwcv1r9qcdDqFSzLHJ3/bnn+FvX5pSuHNz/s+YFqIaoDDm9+e/CQ7uXaeH4L3WfhF1flMc/R4qDqhToHb/RcpvLqCZc8XoU9f3jdC9Jz+mvlneT260DPPbOel+oy7zY1Gx/Qde9W9zCWvW4FtOdYh83fFg+1b+4P3odvHj4a/HWtc1sO6l73OjnCiNMqjrX5IFRSB3T92oqDZkXKNW3+Xu153KexWqjyb9jd1VyunmiJ21+d8jOr37B6zcf6BKszs/jWfVda56+Y+e4PFDej6v/sHtK9XBvPb6Fsxs03L5T5O8Y5qk5tfdd99S6g9W9YBTRc8r6rMPzhdS9Iz+mvle/Pie9EutI6SvXrVncK+l5Iv+kubNOX/dUfQN9Lp8oKLX/5g8VDDpvf37H6gxgR0OoS1P99/cLsmAEdc1q9Ty/e6Wcc80gd0PUur3Z/Nd77re8NBXT9+4q/Yndb/3nf4WF3+4sHuJoQlDO5vK2yupFXnL+99R3r7g/MDznf/mu+e0j3cm08v+2fbFvdAT/OOSoiWzz80fyGIqDxkvdchfEPr3tBuqffvnLuK/67fRu0eAz0cP14xQkC2lzbYwJ6z9NPre6YdL/dsg7iuIAuzvniHsB74U0CRxt1WmWiNxyEpcwBjc/8tG8frNX3n/q+tQ5hEYbd7s2esP3xlC8eth6Qq5/daD1utLvKbDOJ3R9YbPUv/t7qozD6Dulero3ntxAD+nD7duT4cxRXaa+Vwiag8ZIfcRXe13tBNl7+8lU25WOgH1QvnVyOyepG6u76TsHEgO62+z9wrJWD9mMOewOpK/6qGRnQ4mHhe//DsQI67rTKv/yGD0Itc0BblRi4n37ww//5zfptaD1RKZ/HWN0kKwdqIKCtX7W3qmXpvhD4zn3ygR9Y3vv73SvhSKtDupdr4/ktlM049+DqE4uOeY56ng4ptrH1Mqb2tzddhfUfXveCDF7+w/bl7r6MafWA7fIPtb4TP/0x0FUBRzwGujpL61kdeBL7RvFc07jHQIsXJjx0Zbed/vUfYF/uxp3WjSc7P91zEBrOAV1+EtdqoPpf71ZaP/10dEDXZ2O/N6DL57Rb529zQJvXN9fOvxyPdb553WW4XMcIaF8zjnmONr/CZR3QziWfFNDey98YDujq8YH1w6TLO/GTn4Vf/6Jxz8IfhhcZ9Qd08YRcM0jjnoWvfLD8HLrOiW4M6LjTah1r8CCs+AZ0/XLJwYDGYqxfunP6AT3yFuhyoBfv3Fsq38tXHNK5XGca0M7pHz+gJ7kF2nuNNDYEtLn1VzzPtLgTP/51oK13H73SeYy1+i3dY40+f0vvzcpzseHXDZzbzt2tDQEdd1rtYw0dhDWbgPasaeWBX/zad/7v0GOg5UtCirtck+/Ch5sgR9+F730R383/8VT4CIzykO7lOtWAHnmOxgb0WHfh91aPgfa+ML57jSxsCNR+N6CLO/Hj34m0GrPlGe0LaPdYbUcFdPGisfWZ2PDrBs7tyLdyjj+tcKyBg1DIHNCNTyLt1S+XPNzwJNJeay6vF6+rPCKgA08ibXrx8W7nBtym99AfdF722BzSvVynFtBR56j8Ld3XWp34SaTegPZfI0NPItVfxoAu7sQ/My6g3beK9wW05w3lg3eNe55EeiNcoKE34Le/LP9kBx5Y7THutOKx+g9CKXNAw9O/7RfLFMu4P3AXPry7YvVajaMDGk85PL9e3CiNr39uv7Cx/QPdLPeEunu5Ti+gI85R+che893+gMZLfsRV+GzfBen7i6p1gcqXMRUtWZ1+66Pcq7cg3D8qoOFvlVal2jfYwrHK+zSt+ze9zzGtXu9/1ImG14F2X7Z7hHGn1T1W30FoSR3QDS+kL+bs+tCz8PvhTmHz9YiAtk958Z/FJybWq7N6jX2x0cXgdn9gr7MnnUN6LtfpBXTMOSpev9kEvD+g8ZJvvgoHLkjP6a+FF9IXxVl9AFMroPWjH2M/D/SZ5kK2r8niqu0eq/ibozq1DQ+R7nf/lYzhEw03+9efiTzuHvy40+o5Vs9BaEsd0J53A67WrHnH4+Jdif0B7bltMXRPcvVrm1/SOuXVKS7evbj6qPDlY/qrYz1b/sLeH1i+S7LalOat1N1Dupdr4/ktHB3QMedo/VbO1X3qgYCGS775Khx47KTn9Ft/XuVbOVeXou91oM01MDKgizP3cN8n0rfGqHus1svc1+P2WXwrZ++tx8ETLc9t9ZPnW+/bPcq40+o51vibuHev3AEtX8e5nLD6ichni0/7KJ5+aQW0Ox67q0YNvJrm2dYt3PpXf7Vod2NxJqsD1h+OcbH1C3t/oP1I28XeQ7qXa+P5LYwI6JhzVB7UeVtLEdB4yTtXYfcPr+eC9Jx+68+r+DCRtuU32gFdvgZ9VECLM9fN9mqMeo71RnEe1nd+O6+eDee38zkx7RNtndviRx/ecAmOe1o9x+r9QbTkDujhZ6vX9DTPFO43q7b60z/3z18MnwKxtNcZifr1133PZTS/dvVLmtace3b1/MDB6gU3y09eWzyCVy/UuV8Pv7DvB4pPils99NQ5pHO5Np7f9qU7KqCjztH6351cvye+71n4cMm7V2HnD6/vgvScfnmJiodvS+fXd7LLy7yoxqiADv+rnK0x6jnWXt/5Da9477xirB7EoRNtn9vVKYx7dmfcafUca+AHUUoe0Orfyq0+f7f4AOD3qleZ/9Jh89HA1b97vdzGENBqPMJzmPUjWL1PBte/tvgly5czv1U+wfrB4pOOm08aXj4FUn1e0z097/vp+YHD6lM+Frfcin+tu3NIvFwbz29hTEBHnaOeD1TufRlT+5L3XYXhD6/3gvScfqO4Y1wG9J6HVuc+BHT1nvijA1r/s+kPPBOP1R6jnmPdrK+ddri79+D72jRwouHcLj9z+uH+N7h2jDutnmMN/SAKyQKayuDrKu3dqUu+l+QK3ue1QK4I6NkhoGftsyfinYitdLDxX/RAZgT07BDQM7cXXx20lXr+WWOYIKBnh4DeiRNKcBN0lzeT2yKgZ4eAnr35jbutv4r3U9xMxiQE9OwQ0Dtgb+tv3c2vDO7A2yKgZ4eA3pmT2vI8bX/iMR0BBYCJCCgATERAAWAiAgoAExFQAJiIgALARAQUACYioAAwEQEFgIkIKABMREABYCICCgATEVAAmIiAAsBESQL6CXBCTBFOQSgTAcVdginCKQhlIqC4SzBFOAWhTAQUdwmmCKcglImA4i7BFOEUhDIRUNwlmCKcglAmAoq7BFOEUxDKREBxl2CKcApCmQgo7hJMEU5BKBMBxV2CKcIpCGUioEjh3Vnp75Tf+ptf7hz+Z/9w/sXP/+bqKD/+Lz+7OOAH8df+9b/+2THH/PFvzH7mNC8N0gplIqBIYUNAP46H//j36y9/oc7gj36lPuCn/mjgt/705mPOj0dAUQllIqBIYUNA342Hv7r6elm94ibqT/9g4CeX3xg45sczAoqlUCYCimR+9OUQs1dnP/FH4Qizv/2Dxe3QL/zb6oB5J7/wa58cHvzpl9vprXL5C38+v8X6n5v2Lo/5yY/bx1xklYCiEspEQJHLvGbtm5GdxydfbeJX3/GeH6EK6XyKQnvfXVXy4+UtzvqYn4RKvzojoKiFMhFQ5PJq07jGvKjxOaW6sPMeVrdN5/9XHTCfovm3yg6ub7q2j7n8Jatjfjz7wr+Jt3pxtwplIqBI5ePwAOiib62izm88Nsd4d/mtVwdugRbqlr7acwu0+n3DP4i7TCgTAUUm81uGP9F5Jv0n/mv12qOf/NXljcd5Yv9R/a36P+f5+8Jvzif/T78cb702mpuey2N+8klxzMW3CChqoUwEFJm8u65j49XZT/5s/dKj+imjVSWbG6PVc0ILX4g/XFvdru0e892q2AQUtVAmAopEOs8gLW4hrixunPYE9JM/+5WisL2/tvmZeMzljVgCilooEwFFIj03QKt73b/65/VLj37mk76Arl5Y33n8dKlqcHgJfnNA/WQSAUUtlImAIo+eG6CFv17ejuwG9NXZ4jHQzutAa1U/6zwuj1m8DrR+comAohbKRECRR/cp+Jbl6zo7AZ3/b1XB5bPw8SmoeXd/ZfW2o/X36/9qfhcBRS2UiYAij/ieo2DZy05A6/v91RT1PwSwes988e3Ff64eQyWgqIUyEVCkEV4H37HsXedlTHVRqykqXiNae7d8YDS2t/0GfBoKAoq8Pu7efmxZ3WNvv5B+U0B/f/nm99bx17+LgCIKZSKgSKPzLs5KEb3lPfDOWzk33IWf9/On/rD8Xe278AQUUSgTAUUW63eqlz7uPAUUP0xk/SRS8XrP5git37h+Eikck8dAUQtlIqDIov8h0OpFSD/1B9VHyTcvPaqfFlp9nF11jC/82g+WL2Mqf8P8iJ0PdqqOuX5NaXFMAopKKBMBRRbhAczmw+iKD6Svcxg/UPlHX14dsLyBWf/oq+X98+Zd8+1jrk+agKISykRAkUV4Dmn1aZ4fN9X7W/XNyQ3/pMcfFj9afPx8E9DOMWsEFLVQJgKKLN4dCGjzD8H9wfp7nX9U7k9/bn7Az/3aD8ofLW5urgIaj1kjoKiFMhFQZPU3v7zpbUkd5RQd80eBRigTAUVWP/ryxleFRuUUHfNHgUYoEwFFUj/+jY3v6+wopui4Pwo0QpkIKJL60c//4dFHKhRTdNwfBRqhTAQUdwmmCKcglImA4i7BFOEUhDIRUBP/ADgx9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKlCSgOIp69eBAPcX5JAmo+q+d7adePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQykRATahXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDIRUBPq1YMD9RQnEMpEQE2oVw8O1FOcQCgTATWhXj04UE9xAqFMBNSEevXgQD3FCYQyEVAT6tWDA/UUJxDKREBNqFcPDtRTnEAoEwE1oV49OFBPcQKhTATUhHr14EA9xQmEMhFQE+rVgwP1FCcQyjQpoLe/f2ln5+//Tuug1+cHPff2UV9MODIBHUW9enCgnuIETiGgt57fWfhX64M+Xx706Dubv5hwZAI6jnr14EA9xQmcPKC3X9t57O3D2/9r55FvrQ67vPP424e3Xtt5/KONX0w4MgEdR716cKCe4gROHtBr9S3EqztfaQ769NLioM+fr5o6/MWEIxPQkdSrBwfqKU7gxAGd3wB9IR7WtPTqzjc2fTHhyAR0JPXqwYF6ihM4cUA/f777EOXluqnXqgIOfzHhyAR0JPXqwYF6ihM4cUA/vfT4R//vX+zsPPbfVgfdfq2+z119b/iLCUf+Uu3Y5/Kuo149OFBPcT6TAvr68ln41f1sAqqnXj04UE9xPscP6LXqBUwfHd7+/vpZ+KJ8j74z/MWEIzfUt9u3n3r14EA9xQmcRkCXNz0vrx6pPLtboAR0LPXqwYF6ihM4cUA/vXSyJhLQM6FePThQT3ECpxDQ+v51cUebZ+Hl1KsHB+opTuDEAV3dTry2fsNQ88LN+tWcQ19MODIBHUm9enCgnuIEThzQ1WOfl9eZ451IcurVgwP1FCdw8oB+eqn6vKTyWfj67fH1m9iHv5hwZAI6knr14EA9xQmcPKCH1y4tXgb6yAuHq6eUbpUfozT4xbGOTECPRb16cKCe4gROIaCHt6pP7fyXi0/tbJ6Tv1W9uP65j5rv939xrCMT0GNRrx4cqKc4gdMIaOnz34qPV57WkUvqa237qVcPDtRTnEAo04kDerV7f/uUjlxSX2vbT716cKCe4gRCmU4a0Nt/fIzblMc6cov6Wtt+6tWDA/UUJxDKxD8qZ0K9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6iuHmMogAACAASURBVBMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlShJQHEW9enCgnuJ8kgRU/dfO9lOvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhl6g/oZ//44Q/PvorHoL7Wtp969eBAPcUJhDINBPSJ2eyer185+zCOpb7Wtp969eBAPcUJhDL1B/TgjVnl/Mvb0lD1tbb91KsHB+opTiCUafAx0A+eWjT0wZfPOI3jqK+17adePThQT3ECoUybnkR6f9nQh946yzSOo77Wtp969eBAPcUJhDJtfhb+4P0nq4Se+7r6KSX1tbb91KsHB+opTiCU6ciXMd186cLirrz2Zqj6Wtt+6tWDA/UUJxDKdMQt0DfvnzUePrM6jqC+1rafevXgQD3FCYQybQhoff998Vz8zTdms4tnmsjN1Nfa9lOvHhyopziBUKahgDb1XL0adH92r/A1TeprbfupVw8O1FOcQCjTwOtA//0sPnn02RNf/N4ZFvII6mtt+6lXDw7UU5xAKNPwO5HOtV++9NkT3ALdZurVgwP1FCcQyjQU0Ie+Gw46+I7ypUzqa237qVcPDtRTnEAoE5/GZEK9enCgnuIEQpkGHgP95j9b31+//tW/J39LvPpa237q1YMD9RQnEMo0dBe+eMZI+/TRkvpa237q1YMD9RQnEMo0IqDXLxDQ7adePThQT3ECoUydgFZPwEfK59+X1Nfa9lOvHhyopziBUKbuLdD9bkCfvTOV3EB9rW0/9erBgXqKEwhl6gb04L8//fRXL5z7xacbX4uvaBJQX2vbT716cKCe4gRCmUY8BroN1Nfa9lOvHhyopziBUKYRL2PaBuprbfupVw8O1FOcQCgTL6Q3oV49OFBPcQKhTDGgB998en7jc/6/Jf3NUfW1tv3UqwcH6ilOIJQpBvSzJ2Zf/F58LZP+AVH1tbb91KsHB+opTiCUiYCaUK8eHKinOIFQJh4DNaFePThQT3ECoUwE1IR69eBAPcUJhDLxaUwm1KsHB+opTiCUiU9jMqFePThQT3ECoUx8GpMJ9erBgXqKEwhl4tOYTKhXDw7UU5xAKBOfxmRCvXpwoJ7iBEKZ+DQmE+rVgwP1FCcQysSnMZlQrx4cqKc4gVAmPo3JhHr14EA9xQmEMvFCehPq1YMD9RQnEMq0KaA/bHx4lm0cRX2tbT/16sGBeooTCGUaCuiNl/gwkVTUqwcH6ilOIJRpIKDtV4MS0O2nXj04UE9xAqFMAwHdm83Of+1PGt/peUbp00uPf1R8efv1Szs7z7191BcTjkxAR1GvHhyopziBUQE9eHF2X39ZVw18bacM6OfP71QefWfzFxOOTEDHUa8eHKinOIFRAf3siXOvbA7o1Z1WQC/vPP724a06qsNfTDgyAR1HvXpwoJ7iBEYG9IiHPT+91Arop5cWNxo/f/6Rb236YsKRCehI6tWDA/UUJzAqoAcvbr4FOr8D/+/Kx0Cv7nyl/v9vbPpiwpEJ6Ejq1YMD9RQnMCqgh3uzi5sCennnK60nkS7vvLD4/2tVAYe/mHBkAjqSevXgQD3FCYwL6Pwm6DPD/bw2v/teBvT2a/V97urA4S8mHPlLteHzgiX16sGBeorzGXov/Fdns/UHMoU3xi8eoySg20W9enCgnuJ8hp5E2vTPGl+uHqIcCOij7wx/MeHIDfXt9u2nXj04UE9xAicP6NXF8+935hYoAR1LvXpwoJ7iBEYFdJNPLy0yR0C3i3r14EA9xQmcOKBXd1ZWd7R5Fl5OvXpwoJ7iBM4koM0LN+tXcw59MeHIBHQk9erBgXqKExgf0IPm40Df/yc9b0tq3c3mnUhy6tWDA/UUJzAyoEd+HmgroLdf23ls9Sb24S8mHJmAjqRePThQT3EC4wLafhr+3uGA1k8p3So/Rmnwi2MdmYAei3r14EA9xQmMC+he9Tr66h83/uqFWf97ktoBPbz1+jx8z9U3HIe+ONaRCeixqFcPDtRTnMCogB68OLv3SvW/z1YtvXfTv9D5+W/FxytP68gl9bW2/dSrBwfqKU4glGnj54EuP1Jkt8rooKvd+9undOSS+lrbfurVgwP1FCcQyrTx80D3F59Lv7/p0+lv//ExblMe68gt6mtt+6lXDw7UU5xAKNMRAa3uvX/2xMb78HeE+lrbfurVgwP1FCcQyrTxA5WvX6g6euTH098B6mtt+6lXDw7UU5xAKNPAs/C7i0c/lw+FLjOqpb7Wtp969eBAPcUJhDINBPT6hdlDb1VPw1+sYspd+O2nXj04UE9xAqFMQ+9E2l28/2h/Njt3Ybb5n/e4I9TX2vZTrx4cqKc4gVCmwffC/0V1x/1gd/FGJPkNUAJ6JPXqwYF6ihMIZdrwYSL/e97Ng/ceeODr+n4S0COpVw8O1FOcQCjT8T/OTkJ9rW0/9erBgXqKEwhlIqAm1KsHB+opTiCUaSCgN39Y+vDMA3kU9bW2/dSrBwfqKU4glGnKv8opoL7Wtp969eBAPcUJhDIRUBPq1YMD9RQnEMo08FbOv/yT2n98cnbu974jfx5efa1tP/XqwYF6ihMIZTr6SaTrF3gdaALq1YMD9RQnEMo04ln4Pd6JlIB69eBAPcUJhDKNCOg23ARVX2vbT716cKCe4gRCmUYElI+zy0C9enCgnuIEQplG3QIloNtPvXpwoJ7iBEKZjg7oAR9nl4F69eBAPcUJhDINvIzpm083vsrH2aWgXj04UE9xAqFMY15Ir78BSkCPpF49OFBPcQKhTEcH9B4+zi4D9erBgXqKEwhl4tOYTKhXDw7UU5xAKBMBNaFePThQT3ECoUwE1IR69eBAPcUJhDKNCuhfyh8FVV9r20+9enCgnuIEQpn6A3rzzfsXzx899Fb11f6s+ufhpdTX2vZTrx4cqKc4gVCmvoAevLF+Dv78W9VT8vIXMqmvte2nXj04UE9xAqFMPQG98eQinQ888ED1f+ee2Z3Nnr0jldxAfa1tP/XqwYF6ihMIZeoGdPEa0OV998Oby9ui992BRG6mvta2n3r14EA9xQmEMnUDOr/BWTzkef3CNvyLHgT0SOrVgwP1FCcQytQJaFXM4h77wYsz/VNIBPRo6tWDA/UUJxDK1AnoXvse+151F54PE9l+6tWDA/UUJxDKFANa3eIsboB+9sTs6W34NBH1tbb91KsHB+opTiCUKQZ0XszyHvv+7N7/c2ELHgRVX2vbT716cKCe4gRCmXoCWuby4M1fD4doqK+17adePThQT3ECoUxHBLT3EAH1tbb91KsHB+opTiCUqecx0PCk+/ULPAaagHr14EA9xQmEMnWehd+NT7rv8UL6DNSrBwfqKU4glKkT0P3wpHt4Wl5Efa1tP/XqwYF6ihMIZeoEtHonZ3kTdI93IqWgXj04UE9xAqFM3bdyzm+Czn6puQ168O3ZNtwAJaBHUq8eHKinOIFQpp5PY3pj8S/J/fDK4cEP37ywFe9DIqBHU68eHKinOIFQpr7PA90r/03jregnAT2SevXgQD3FCYQy9X4i/Y2nVvl88K07kMejqa+17adePThQT3ECoUwD/ybSwfvffOqBB5/+PfkLQGvqa237qVcPDtRTnEAoE/8qpwn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmZIEFEdRrx4cqKc4nyQBVf+1s/3UqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkmBfSvfntn55Hn3i4Puv36pZ2d5qDhLyYcmYCOol49OFBPcQKnENDv7yw88q31QZ8/vzjo0Xc2fzHhyAR0HPXqwYF6ihM4eUCv7TzyO4eHt14rO3d55/G3q4Me/2jjFxOOTEDHUa8eHKinOIETB/T2azsvVP8/v7X4QnPYp5cWMf38+epW6fAXE45MQEdSrx4cqKc4gRMH9PPn61uel3e+0Rx2decr9f9/Y9MXE45MQEdSrx4cqKc4gRMHdKUI6OX6xui1qoDDX0w4MgEdSb16cKCe4gROLaDFHe3br9X/+emlxz8a/mLCkb9Um3wu7xrq1YMD9RTnMz2gV9c3Ewmonnr14EA9xflMDui14mVMRfkefWf4iwlHbqhvt28/9erBgXqKEzilgF679MjqOfgzvAVKQMdSrx4cqKc4gdMJ6NXWy+gJqJ569eBAPcUJnEpAv9/qJ8/CbwH16sGBeooTOIWA3r6881j7McrmhZv1qzmHvphwZAI6knr14EA9xQmcQkAvd95qyTuR5NSrBwfqKU7g5AG92n2r+u3Xdh5bvYl9+IsJRyagI6lXDw7UU5zAiQNaf2JS5SvVjcbFrcVb5ccoDX5xrCMT0GNRrx4cqKc4gRMH9NpOT0APb70+//q5+obj0BfHOjIBPRb16sGBeooTOHFAg89/Kz5eeVpHLqmvte2nXj04UE9xAqFMJw7o1e797VM6ckl9rW0/9erBgXqKEwhlOmlAb//xMW5THuvILeprbfupVw8O1FOcQCgT/6icCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGVKElAcRb16cKCe4nySBFT91872U68eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhlIqAm1KsHB+opTiCUiYCaUK8eHKinOIFQJgJqQr16cKCe4gRCmQioCfXqwYF6ihMIZSKgJtSrBwfqKU4glImAmlCvHhyopziBNFuH+QAABV9JREFUUCYCakK9enCgnuIEQpkIqAn16sGBeooTCGUioCbUqwcH6ilOIJSJgJpQrx4cqKc4gVAmAmpCvXpwoJ7iBEKZCKgJ9erBgXqKEwhl2rKA3n790s7Oc293Dldfa9tPvXpwoJ7iBEKZtiugnz+/U3n0nfgN9bW2/dSrBwfqKU4glGm7Anp55/G3D2+9tvP4R+Eb6mtt+6lXDw7UU5xAKNNWBfTTS4vbnp8//8i3wnfU19r2U68eHKinOIFQpq0K6NWdr9T//43wHfW1tv3UqwcH6ilOIJRpqwJ6eeeFxf9fq0O6pr7Wtp969eBAPcUJhDJtU0Bvv1bfdf/0UvMg6JdqwnOVhHr14EA9xfkQUNwlmCKcvi0NaPeFTMDJEFCcvi0NaOd1TMAJEVCcPgKKuwQBxenbpoBueBYeOCkCitO3VQFtXv/ZfR0ocFIEFKdvqwI6/E4k4KQIKE7fVgX09ms7j/W/Fx44KQKK07dVAT28NfRpTACwfbYroIe3Xp/38zlufwLIYMsCCgB5EFAAmIiAAsBEBBQAJiKgADARAQWAiQgo7PzVb+/sPNL849itfyl7+DvAFAQUbr6/eDfGzvL9wK1/KXv4O8AkBBRmru088juH1RuCF2ks/6Xs4e8A0xBQeLn92vJDEec3MF9ofz7N8HeAiQgovHz+fH2n/HL1oYjlv5Q9/B1gIgIKU4tM9n5G9/B3gOMhoPBU32vv+Vdihr8DHBMBhafFXfTeTA5/BzgmAgpL1xYvVur7l7KHvwMcFwGFo2uXHqke4uy5nTn8HeDYCCgMXa1fLN/N5PB3gOMjoPDz/Z3mxZ3xufbh7wATEFC4uX1557HmYc32v5Q9/B1gEgIKN5eLd2e23280/B1gEgIKM1fLd7e3/qXs4e8A0xBQeKk/ZKlSPbhZ/EvZw98BJiKg8HJtp5XJ4l/KHv4OMBEBBYCJCCgATERAAWAiAgoAExFQAJiIgALARAQUACYioAAwEQEFgIkIKABMREABYCICCgATEVAAmIiAwsbubHbf+quDF2ezZ3VnBncFAgobnz1RJnOvlVPgLBBQ+Nifzb74vfq/r19Y/zdwRggojMzvxF9c/hd34HEnEFAYmd+JP/fK4r+4A487gYDCyfxO/L1XDhclXfw/cKYIKJxU99yrO/G7zS3RuRsvXZjNzj30VvP1B9XXswe+fqX+gWfff3I2u+eVnt8GHIGAwsr1C1U691ePhS7uzC89vPjy4I3m6/PVc0zzgD5dfcETTpiCgMJL9eDnvIqrO/Dzr6sbnzffqAs6//rh+fduPLl8kLS6yTov7o2XZWcYmRFQeKmK+MD6Dvz8Fmn9ZNLe4sDPnqi/rh8l5dl6nAQBhZnr1SOcxR345s75PJX3Vc8y1W2df1l9p/4/YBICCjd7s/Ud+GU1l3bbT8zvNgHl6XpMRkDhZn4TdHUDtHp351pzW/PmB3/yzftnTUB5vSgmI6Bwc0RA37u//JKA4iQIKNyEgLb7WD1pNJs98PTvfrhLQHFiBBRuyoB2HuKsX8V0WDwGSkAxGQGFmzKgxVuSFi1dB3V+25SA4qQIKNy0Ajr/oi7mfvWCz3VA93gMFCdHQOGmFdAqlOdfnofy28sXN9V34T94crZ4BxIBxYkQULhpB3T9XvjlxzQ9WX/10LcXb0EioDgJAgo3IaCHN16qXrj0YP1u94M3768+m+m79RP0BBQnQUABYCICCgATEVAAmIiAAsBEBBQAJiKgADARAQWAiQgoAExEQAFgIgIKABMRUACYiIACwEQEFAAmIqAAMBEBBYCJCCgATERAAWAiAgoAExFQAJiIgALARP8fENiCh2ED/VAAAAAASUVORK5CYII=" width="672" /></p>
+<p>The stacked table shows the top 10 most prescribed antidepressants
+each year from 2019 to 2022. The BNF (British National Formulary) code
+is a unique 15 digit code that is assigned to each drug, the first 7
+digits of this code are related to the BNF categories with the first 2
+corresponding to the chapter and the next 2 to the section (in this case
+“0403” which corresponds to “central nervous system drugs” and
+“antidepressants” respectively) (Open Prescribing, 2025; Public Health
+Scotland, 2025). The BNF item description is the name, type and dosage
+of each antidepressant (Public Health Scotland, 2025). Quantity
+represents the total amount of each antidepressant that was prescribed
+and rankings for each year are shown on the right.</p>
+</div>
+<div id="figure-2" class="section level2">
+<h2>Figure 2:</h2>
+<pre class="r"><code>#Make a wide table to show a comparison of the top 10 antidepressants across all 4 years.
+antidep_10_across_all_years &lt;- antidep2019_2022 %&gt;% 
+  group_by(year) %&gt;% 
+  arrange(desc(paid_items)) %&gt;% 
+  slice_head(n = 10) %&gt;% 
+  ungroup() %&gt;% 
+  mutate(rank = row_number(), .by = year) %&gt;% 
+  arrange(year, rank)
+#Pivot wider and use gt() to make the table and then make the table prettier.
+antidep_10_across_all_years_table &lt;- antidep_10_across_all_years %&gt;% 
+  select(rank, bnf_item_description, year, paid_items) %&gt;% 
+  pivot_wider(names_from = year, values_from = paid_items) %&gt;% 
+  arrange(rank) %&gt;% 
+  gt() %&gt;% 
+  tab_header(title = &quot;Comparison of the Top 10 Most Prescribed Antidepressants 2019-2022&quot;) %&gt;% 
+  cols_label(rank = &quot;Rank&quot;, bnf_item_description = &quot;Antidepressant&quot;, &#39;2019&#39; = &quot;2019&quot;, &#39;2020&#39; = &quot;2020&quot;, &#39;2021&#39; = &quot;2021&quot;, &#39;2022&#39; = &quot;2022&quot;) %&gt;%
+  tab_spanner(label = &quot;Quantity&quot;, columns = c(&#39;2019&#39;, &#39;2020&#39;, &#39;2021&#39;, &#39;2022&#39;)) %&gt;% 
+  fmt_number(columns = c(&#39;2019&#39;, &#39;2020&#39;, &#39;2021&#39;, &#39;2022&#39;), decimals = 0, use_seps = TRUE) %&gt;%
+  sub_missing(columns = everything(), missing_text = &quot;-&quot;) %&gt;% 
+  opt_stylize() %&gt;% 
+  tab_options(table.font.size = px(15), heading.background.color = &quot;lavender&quot;, column_labels.background.color = &quot;#f0f0f0&quot;, table.border.top.color = &quot;black&quot;)
+#Print result
+antidep_10_across_all_years_table</code></pre>
+<div id="gatqfyiijd" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#gatqfyiijd table {
+font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+#gatqfyiijd thead, #gatqfyiijd tbody, #gatqfyiijd tfoot, #gatqfyiijd tr, #gatqfyiijd td, #gatqfyiijd th {
+border-style: none;
+}
+#gatqfyiijd p {
+margin: 0;
+padding: 0;
+}
+#gatqfyiijd .gt_table {
+display: table;
+border-collapse: collapse;
+line-height: normal;
+margin-left: auto;
+margin-right: auto;
+color: #333333;
+font-size: 15px;
+font-weight: normal;
+font-style: normal;
+background-color: #FFFFFF;
+width: auto;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #000000;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #004D80;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+}
+#gatqfyiijd .gt_caption {
+padding-top: 4px;
+padding-bottom: 4px;
+}
+#gatqfyiijd .gt_title {
+color: #333333;
+font-size: 125%;
+font-weight: initial;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-color: #FFFFFF;
+border-bottom-width: 0;
+}
+#gatqfyiijd .gt_subtitle {
+color: #333333;
+font-size: 85%;
+font-weight: initial;
+padding-top: 3px;
+padding-bottom: 5px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-color: #FFFFFF;
+border-top-width: 0;
+}
+#gatqfyiijd .gt_heading {
+background-color: #E6E6FA;
+text-align: center;
+border-bottom-color: #FFFFFF;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#gatqfyiijd .gt_bottom_border {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+}
+#gatqfyiijd .gt_col_headings {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #0076BA;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#gatqfyiijd .gt_col_heading {
+color: #333333;
+background-color: #F0F0F0;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 6px;
+padding-left: 5px;
+padding-right: 5px;
+overflow-x: hidden;
+}
+#gatqfyiijd .gt_column_spanner_outer {
+color: #333333;
+background-color: #F0F0F0;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+padding-top: 0;
+padding-bottom: 0;
+padding-left: 4px;
+padding-right: 4px;
+}
+#gatqfyiijd .gt_column_spanner_outer:first-child {
+padding-left: 0;
+}
+#gatqfyiijd .gt_column_spanner_outer:last-child {
+padding-right: 0;
+}
+#gatqfyiijd .gt_column_spanner {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 5px;
+overflow-x: hidden;
+display: inline-block;
+width: 100%;
+}
+#gatqfyiijd .gt_spanner_row {
+border-bottom-style: hidden;
+}
+#gatqfyiijd .gt_group_heading {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #0076BA;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+text-align: left;
+}
+#gatqfyiijd .gt_empty_group_heading {
+padding: 0.5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #0076BA;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+vertical-align: middle;
+}
+#gatqfyiijd .gt_from_md > :first-child {
+margin-top: 0;
+}
+#gatqfyiijd .gt_from_md > :last-child {
+margin-bottom: 0;
+}
+#gatqfyiijd .gt_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+margin: 10px;
+border-top-style: none;
+border-top-width: 1px;
+border-top-color: #89D3FE;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #89D3FE;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #89D3FE;
+vertical-align: middle;
+overflow-x: hidden;
+}
+#gatqfyiijd .gt_stub {
+color: #FFFFFF;
+background-color: #0076BA;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #0076BA;
+padding-left: 5px;
+padding-right: 5px;
+}
+#gatqfyiijd .gt_stub_row_group {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+vertical-align: top;
+}
+#gatqfyiijd .gt_row_group_first td {
+border-top-width: 2px;
+}
+#gatqfyiijd .gt_row_group_first th {
+border-top-width: 2px;
+}
+#gatqfyiijd .gt_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#gatqfyiijd .gt_first_summary_row {
+border-top-style: solid;
+border-top-color: #0076BA;
+}
+#gatqfyiijd .gt_first_summary_row.thick {
+border-top-width: 2px;
+}
+#gatqfyiijd .gt_last_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+}
+#gatqfyiijd .gt_grand_summary_row {
+color: #333333;
+background-color: #89D3FE;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#gatqfyiijd .gt_first_grand_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-style: double;
+border-top-width: 6px;
+border-top-color: #0076BA;
+}
+#gatqfyiijd .gt_last_grand_summary_row_top {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: double;
+border-bottom-width: 6px;
+border-bottom-color: #0076BA;
+}
+#gatqfyiijd .gt_striped {
+background-color: #F4F4F4;
+}
+#gatqfyiijd .gt_table_body {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #0076BA;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+}
+#gatqfyiijd .gt_footnotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#gatqfyiijd .gt_footnote {
+margin: 0px;
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#gatqfyiijd .gt_sourcenotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#gatqfyiijd .gt_sourcenote {
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#gatqfyiijd .gt_left {
+text-align: left;
+}
+#gatqfyiijd .gt_center {
+text-align: center;
+}
+#gatqfyiijd .gt_right {
+text-align: right;
+font-variant-numeric: tabular-nums;
+}
+#gatqfyiijd .gt_font_normal {
+font-weight: normal;
+}
+#gatqfyiijd .gt_font_bold {
+font-weight: bold;
+}
+#gatqfyiijd .gt_font_italic {
+font-style: italic;
+}
+#gatqfyiijd .gt_super {
+font-size: 65%;
+}
+#gatqfyiijd .gt_footnote_marks {
+font-size: 75%;
+vertical-align: 0.4em;
+position: initial;
+}
+#gatqfyiijd .gt_asterisk {
+font-size: 100%;
+vertical-align: 0;
+}
+#gatqfyiijd .gt_indent_1 {
+text-indent: 5px;
+}
+#gatqfyiijd .gt_indent_2 {
+text-indent: 10px;
+}
+#gatqfyiijd .gt_indent_3 {
+text-indent: 15px;
+}
+#gatqfyiijd .gt_indent_4 {
+text-indent: 20px;
+}
+#gatqfyiijd .gt_indent_5 {
+text-indent: 25px;
+}
+#gatqfyiijd .katex-display {
+display: inline-flex !important;
+margin-bottom: 0.75em !important;
+}
+#gatqfyiijd div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+height: 0px !important;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_heading">
+      <td colspan="6" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Comparison of the Top 10 Most Prescribed Antidepressants 2019-2022</td>
+    </tr>
+    
+    <tr class="gt_col_headings gt_spanner_row">
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="2" colspan="1" scope="col" id="rank">Rank</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_left" rowspan="2" colspan="1" scope="col" id="bnf_item_description">Antidepressant</th>
+      <th class="gt_center gt_columns_top_border gt_column_spanner_outer" rowspan="1" colspan="4" scope="colgroup" id="Quantity">
+        <div class="gt_column_spanner">Quantity</div>
+      </th>
+    </tr>
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a2019">2019</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a2020">2020</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a2021">2021</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="a2022">2022</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="rank" class="gt_row gt_right">1</td>
+<td headers="bnf_item_description" class="gt_row gt_left">FLUOXETINE HCL_CAP 20MG</td>
+<td headers="2019" class="gt_row gt_right">870,053</td>
+<td headers="2020" class="gt_row gt_right">882,062</td>
+<td headers="2021" class="gt_row gt_right">900,696</td>
+<td headers="2022" class="gt_row gt_right">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">1</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">SERTRALINE HCL_TAB 50MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">-</td>
+<td headers="2020" class="gt_row gt_right gt_striped">-</td>
+<td headers="2021" class="gt_row gt_right gt_striped">-</td>
+<td headers="2022" class="gt_row gt_right gt_striped">929,836</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">2</td>
+<td headers="bnf_item_description" class="gt_row gt_left">AMITRIPTYLINE HCL_TAB 10MG</td>
+<td headers="2019" class="gt_row gt_right">790,899</td>
+<td headers="2020" class="gt_row gt_right">831,625</td>
+<td headers="2021" class="gt_row gt_right">-</td>
+<td headers="2022" class="gt_row gt_right">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">2</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">SERTRALINE HCL_TAB 50MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">-</td>
+<td headers="2020" class="gt_row gt_right gt_striped">-</td>
+<td headers="2021" class="gt_row gt_right gt_striped">890,068</td>
+<td headers="2022" class="gt_row gt_right gt_striped">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">2</td>
+<td headers="bnf_item_description" class="gt_row gt_left">SERTRALINE HCL_TAB 100MG</td>
+<td headers="2019" class="gt_row gt_right">-</td>
+<td headers="2020" class="gt_row gt_right">-</td>
+<td headers="2021" class="gt_row gt_right">-</td>
+<td headers="2022" class="gt_row gt_right">917,341</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">3</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">SERTRALINE HCL_TAB 50MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">775,274</td>
+<td headers="2020" class="gt_row gt_right gt_striped">826,953</td>
+<td headers="2021" class="gt_row gt_right gt_striped">-</td>
+<td headers="2022" class="gt_row gt_right gt_striped">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">3</td>
+<td headers="bnf_item_description" class="gt_row gt_left">AMITRIPTYLINE HCL_TAB 10MG</td>
+<td headers="2019" class="gt_row gt_right">-</td>
+<td headers="2020" class="gt_row gt_right">-</td>
+<td headers="2021" class="gt_row gt_right">881,309</td>
+<td headers="2022" class="gt_row gt_right">906,081</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">4</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">SERTRALINE HCL_TAB 100MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">725,689</td>
+<td headers="2020" class="gt_row gt_right gt_striped">797,363</td>
+<td headers="2021" class="gt_row gt_right gt_striped">868,234</td>
+<td headers="2022" class="gt_row gt_right gt_striped">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">4</td>
+<td headers="bnf_item_description" class="gt_row gt_left">FLUOXETINE HCL_CAP 20MG</td>
+<td headers="2019" class="gt_row gt_right">-</td>
+<td headers="2020" class="gt_row gt_right">-</td>
+<td headers="2021" class="gt_row gt_right">-</td>
+<td headers="2022" class="gt_row gt_right">887,674</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">5</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">CITALOPRAM HYDROB_TAB 20MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">616,030</td>
+<td headers="2020" class="gt_row gt_right gt_striped">601,153</td>
+<td headers="2021" class="gt_row gt_right gt_striped">593,771</td>
+<td headers="2022" class="gt_row gt_right gt_striped">571,208</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">6</td>
+<td headers="bnf_item_description" class="gt_row gt_left">AMITRIPTYLINE HCL_TAB 25MG</td>
+<td headers="2019" class="gt_row gt_right">342,068</td>
+<td headers="2020" class="gt_row gt_right">353,233</td>
+<td headers="2021" class="gt_row gt_right">356,368</td>
+<td headers="2022" class="gt_row gt_right">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">6</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 15MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">-</td>
+<td headers="2020" class="gt_row gt_right gt_striped">-</td>
+<td headers="2021" class="gt_row gt_right gt_striped">-</td>
+<td headers="2022" class="gt_row gt_right gt_striped">362,096</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">7</td>
+<td headers="bnf_item_description" class="gt_row gt_left">CITALOPRAM HYDROB_TAB 10MG</td>
+<td headers="2019" class="gt_row gt_right">307,006</td>
+<td headers="2020" class="gt_row gt_right">-</td>
+<td headers="2021" class="gt_row gt_right">-</td>
+<td headers="2022" class="gt_row gt_right">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">7</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 15MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">-</td>
+<td headers="2020" class="gt_row gt_right gt_striped">324,988</td>
+<td headers="2021" class="gt_row gt_right gt_striped">347,586</td>
+<td headers="2022" class="gt_row gt_right gt_striped">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">7</td>
+<td headers="bnf_item_description" class="gt_row gt_left">AMITRIPTYLINE HCL_TAB 25MG</td>
+<td headers="2019" class="gt_row gt_right">-</td>
+<td headers="2020" class="gt_row gt_right">-</td>
+<td headers="2021" class="gt_row gt_right">-</td>
+<td headers="2022" class="gt_row gt_right">353,305</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">8</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 15MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">301,998</td>
+<td headers="2020" class="gt_row gt_right gt_striped">-</td>
+<td headers="2021" class="gt_row gt_right gt_striped">-</td>
+<td headers="2022" class="gt_row gt_right gt_striped">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">8</td>
+<td headers="bnf_item_description" class="gt_row gt_left">MIRTAZAPINE_TAB 30MG</td>
+<td headers="2019" class="gt_row gt_right">-</td>
+<td headers="2020" class="gt_row gt_right">309,529</td>
+<td headers="2021" class="gt_row gt_right">318,306</td>
+<td headers="2022" class="gt_row gt_right">322,685</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">9</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 30MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">297,018</td>
+<td headers="2020" class="gt_row gt_right gt_striped">-</td>
+<td headers="2021" class="gt_row gt_right gt_striped">-</td>
+<td headers="2022" class="gt_row gt_right gt_striped">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">9</td>
+<td headers="bnf_item_description" class="gt_row gt_left">MIRTAZAPINE_TAB 45MG</td>
+<td headers="2019" class="gt_row gt_right">-</td>
+<td headers="2020" class="gt_row gt_right">299,670</td>
+<td headers="2021" class="gt_row gt_right">309,613</td>
+<td headers="2022" class="gt_row gt_right">315,570</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right gt_striped">10</td>
+<td headers="bnf_item_description" class="gt_row gt_left gt_striped">MIRTAZAPINE_TAB 45MG</td>
+<td headers="2019" class="gt_row gt_right gt_striped">279,887</td>
+<td headers="2020" class="gt_row gt_right gt_striped">-</td>
+<td headers="2021" class="gt_row gt_right gt_striped">-</td>
+<td headers="2022" class="gt_row gt_right gt_striped">-</td></tr>
+    <tr><td headers="rank" class="gt_row gt_right">10</td>
+<td headers="bnf_item_description" class="gt_row gt_left">CITALOPRAM HYDROB_TAB 10MG</td>
+<td headers="2019" class="gt_row gt_right">-</td>
+<td headers="2020" class="gt_row gt_right">297,196</td>
+<td headers="2021" class="gt_row gt_right">297,984</td>
+<td headers="2022" class="gt_row gt_right">293,855</td></tr>
+  </tbody>
+  
+</table>
+</div>
+<p>The table shows a comparison of the top 10 most prescribed
+antidepressants from 2019 to 2022. On the left is the rank and on the
+right is the quantity/how much of each antidepressant was prescribed
+each year from 2019 - 2022. “-” indicates that for a particular year
+that antidepressant did not rank.</p>
+</div>
+<div id="interpretation-of-results" class="section level2">
+<h2>Interpretation of Results:</h2>
+<p>From the stacked and comparison tables (figures 1 and 2) we can see
+that some antidepressants e.g. Sertraline/Mirtazapine consistently
+remain in the top 10 across the years while others appear only in the
+top 10 for one year but not the others. SSRIs such as Fluoxetine,
+Sertraline and Citalopram and TCAs like Amitriptyline seem to dominate
+the top of the list while NASSAs like Mirtazapine also appear
+consistently but lower-ranked.</p>
+<p>Overall, these tables suggests that the type of antidepressants
+prescribed has changed over time. One particular example is the SSRI
+Sertraline - as seen from the table in figure 2, Sertraline
+prescriptions (regardless of dosage/formulation) tend to increase after
+2019. There are likely many reasons why this happened, one being that
+SSRIs are first-line antidepressants (which in turn means they may be
+more likely to be prescribed) as they tend to be better tolerated, with
+fewer side effects, than other antidepressants e.g. TCAs (Chu and
+Wadhwa, 2023). This also means they require less monitoring which makes
+them suitable in situations where going to a doctor/hospital is hard (as
+was often the case during COVID when only visits deemed essential were
+able to go ahead). These factors, along with the fact that during COVID
+access to therapy and other non-pharmacological options was limited so
+reliance on antidepressants was likely higher, could account for the
+increase in Sertraline prescriptions during COVID (2020 - 2021). In
+addition, SSRIs are safer in an overdose - this might have been another
+important consideration as during COVID depression/mental health
+problems increased so prescribing SSRIs could reduce the risk of fatal
+overdosing as death due to an SSRI overdose is much less likely compared
+to other antidepressants such as TCAs, meaning they can be given to
+at-risk patients (Taylor, Poulou and Clark, 2024).</p>
+<p>However, Sertraline prescriptions continued to increase and were
+actually even higher after COVID (in 2022) so perhaps there is another
+explanation for this increase. Antidepressant prescriptions in Scotland
+have steadily been increasing over the years (even before COVID) and
+this overall increase can in part be attributed to the fact that more
+people in Scotland are taking antidepressants long-term rather than
+necessarily more people starting to take antidepressants (Public Health
+Scotland, 2021; Scottish Government, 2024). As previously mentioned,
+SSRIs are first-line antidepressants due to better tolerance/less side
+effects and less toxicity in overdose, TCAs on the other hand can cause
+heart issues e.g. arrhythmias even in normal clinical use - this makes
+SSRIs better suited for long-term use as less side effects (and the fact
+that they are a first-line antidepresant) means that not only may
+doctors be more likely to prescribe these but patients may also be more
+likely to continue taking them and therefore have better outcomes by
+continuing with their treatment which could be another reason why they
+are prescribed more (Taylor, Poulou and Clark, 2024).</p>
+</div>
+<div id="figure-3" class="section level2">
+<h2>Figure 3:</h2>
+<pre class="r"><code>#Make a table of the total antidepressant quantity for each year.
+totals_per_year_data &lt;- antidep2019_2022 %&gt;%
+  group_by(year) %&gt;% 
+  summarise(total_paid_items = sum(paid_items, na.rm = TRUE), .groups = &quot;drop&quot;) 
+#Use gt() to make the table and make the table prettier.
+totals_per_year_table &lt;- totals_per_year_data %&gt;% 
+  gt() %&gt;% 
+  tab_header(title = &quot;Total Antidepressant Prescriptions Per Year (2019-2022)&quot;) %&gt;% 
+  cols_label(year = &quot;Year&quot;, total_paid_items = &quot;Total Quantity&quot;) %&gt;% 
+  fmt_number(columns = total_paid_items, decimals = 0, use_seps = TRUE) %&gt;% 
+  opt_stylize() %&gt;% 
+  tab_options(table.font.size = px(16), heading.background.color = &quot;lavender&quot;, column_labels.background.color = &quot;#f0f0f0&quot;, table.border.top.color = &quot;black&quot;)
+#Print result
+totals_per_year_table</code></pre>
+<div id="dezlbiqqyu" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#dezlbiqqyu table {
+font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+-webkit-font-smoothing: antialiased;
+-moz-osx-font-smoothing: grayscale;
+}
+#dezlbiqqyu thead, #dezlbiqqyu tbody, #dezlbiqqyu tfoot, #dezlbiqqyu tr, #dezlbiqqyu td, #dezlbiqqyu th {
+border-style: none;
+}
+#dezlbiqqyu p {
+margin: 0;
+padding: 0;
+}
+#dezlbiqqyu .gt_table {
+display: table;
+border-collapse: collapse;
+line-height: normal;
+margin-left: auto;
+margin-right: auto;
+color: #333333;
+font-size: 16px;
+font-weight: normal;
+font-style: normal;
+background-color: #FFFFFF;
+width: auto;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #000000;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #004D80;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+}
+#dezlbiqqyu .gt_caption {
+padding-top: 4px;
+padding-bottom: 4px;
+}
+#dezlbiqqyu .gt_title {
+color: #333333;
+font-size: 125%;
+font-weight: initial;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-color: #FFFFFF;
+border-bottom-width: 0;
+}
+#dezlbiqqyu .gt_subtitle {
+color: #333333;
+font-size: 85%;
+font-weight: initial;
+padding-top: 3px;
+padding-bottom: 5px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-color: #FFFFFF;
+border-top-width: 0;
+}
+#dezlbiqqyu .gt_heading {
+background-color: #E6E6FA;
+text-align: center;
+border-bottom-color: #FFFFFF;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#dezlbiqqyu .gt_bottom_border {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+}
+#dezlbiqqyu .gt_col_headings {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #0076BA;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+}
+#dezlbiqqyu .gt_col_heading {
+color: #333333;
+background-color: #F0F0F0;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 6px;
+padding-left: 5px;
+padding-right: 5px;
+overflow-x: hidden;
+}
+#dezlbiqqyu .gt_column_spanner_outer {
+color: #333333;
+background-color: #F0F0F0;
+font-size: 100%;
+font-weight: normal;
+text-transform: inherit;
+padding-top: 0;
+padding-bottom: 0;
+padding-left: 4px;
+padding-right: 4px;
+}
+#dezlbiqqyu .gt_column_spanner_outer:first-child {
+padding-left: 0;
+}
+#dezlbiqqyu .gt_column_spanner_outer:last-child {
+padding-right: 0;
+}
+#dezlbiqqyu .gt_column_spanner {
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+vertical-align: bottom;
+padding-top: 5px;
+padding-bottom: 5px;
+overflow-x: hidden;
+display: inline-block;
+width: 100%;
+}
+#dezlbiqqyu .gt_spanner_row {
+border-bottom-style: hidden;
+}
+#dezlbiqqyu .gt_group_heading {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #0076BA;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #D3D3D3;
+vertical-align: middle;
+text-align: left;
+}
+#dezlbiqqyu .gt_empty_group_heading {
+padding: 0.5px;
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #0076BA;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+vertical-align: middle;
+}
+#dezlbiqqyu .gt_from_md > :first-child {
+margin-top: 0;
+}
+#dezlbiqqyu .gt_from_md > :last-child {
+margin-bottom: 0;
+}
+#dezlbiqqyu .gt_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+margin: 10px;
+border-top-style: none;
+border-top-width: 1px;
+border-top-color: #89D3FE;
+border-left-style: none;
+border-left-width: 1px;
+border-left-color: #89D3FE;
+border-right-style: none;
+border-right-width: 1px;
+border-right-color: #89D3FE;
+vertical-align: middle;
+overflow-x: hidden;
+}
+#dezlbiqqyu .gt_stub {
+color: #FFFFFF;
+background-color: #0076BA;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #0076BA;
+padding-left: 5px;
+padding-right: 5px;
+}
+#dezlbiqqyu .gt_stub_row_group {
+color: #333333;
+background-color: #FFFFFF;
+font-size: 100%;
+font-weight: initial;
+text-transform: inherit;
+border-right-style: solid;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+padding-left: 5px;
+padding-right: 5px;
+vertical-align: top;
+}
+#dezlbiqqyu .gt_row_group_first td {
+border-top-width: 2px;
+}
+#dezlbiqqyu .gt_row_group_first th {
+border-top-width: 2px;
+}
+#dezlbiqqyu .gt_summary_row {
+color: #333333;
+background-color: #FFFFFF;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#dezlbiqqyu .gt_first_summary_row {
+border-top-style: solid;
+border-top-color: #0076BA;
+}
+#dezlbiqqyu .gt_first_summary_row.thick {
+border-top-width: 2px;
+}
+#dezlbiqqyu .gt_last_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+}
+#dezlbiqqyu .gt_grand_summary_row {
+color: #333333;
+background-color: #89D3FE;
+text-transform: inherit;
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#dezlbiqqyu .gt_first_grand_summary_row {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-top-style: double;
+border-top-width: 6px;
+border-top-color: #0076BA;
+}
+#dezlbiqqyu .gt_last_grand_summary_row_top {
+padding-top: 8px;
+padding-bottom: 8px;
+padding-left: 5px;
+padding-right: 5px;
+border-bottom-style: double;
+border-bottom-width: 6px;
+border-bottom-color: #0076BA;
+}
+#dezlbiqqyu .gt_striped {
+background-color: #F4F4F4;
+}
+#dezlbiqqyu .gt_table_body {
+border-top-style: solid;
+border-top-width: 2px;
+border-top-color: #0076BA;
+border-bottom-style: solid;
+border-bottom-width: 2px;
+border-bottom-color: #0076BA;
+}
+#dezlbiqqyu .gt_footnotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#dezlbiqqyu .gt_footnote {
+margin: 0px;
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#dezlbiqqyu .gt_sourcenotes {
+color: #333333;
+background-color: #FFFFFF;
+border-bottom-style: none;
+border-bottom-width: 2px;
+border-bottom-color: #D3D3D3;
+border-left-style: none;
+border-left-width: 2px;
+border-left-color: #D3D3D3;
+border-right-style: none;
+border-right-width: 2px;
+border-right-color: #D3D3D3;
+}
+#dezlbiqqyu .gt_sourcenote {
+font-size: 90%;
+padding-top: 4px;
+padding-bottom: 4px;
+padding-left: 5px;
+padding-right: 5px;
+}
+#dezlbiqqyu .gt_left {
+text-align: left;
+}
+#dezlbiqqyu .gt_center {
+text-align: center;
+}
+#dezlbiqqyu .gt_right {
+text-align: right;
+font-variant-numeric: tabular-nums;
+}
+#dezlbiqqyu .gt_font_normal {
+font-weight: normal;
+}
+#dezlbiqqyu .gt_font_bold {
+font-weight: bold;
+}
+#dezlbiqqyu .gt_font_italic {
+font-style: italic;
+}
+#dezlbiqqyu .gt_super {
+font-size: 65%;
+}
+#dezlbiqqyu .gt_footnote_marks {
+font-size: 75%;
+vertical-align: 0.4em;
+position: initial;
+}
+#dezlbiqqyu .gt_asterisk {
+font-size: 100%;
+vertical-align: 0;
+}
+#dezlbiqqyu .gt_indent_1 {
+text-indent: 5px;
+}
+#dezlbiqqyu .gt_indent_2 {
+text-indent: 10px;
+}
+#dezlbiqqyu .gt_indent_3 {
+text-indent: 15px;
+}
+#dezlbiqqyu .gt_indent_4 {
+text-indent: 20px;
+}
+#dezlbiqqyu .gt_indent_5 {
+text-indent: 25px;
+}
+#dezlbiqqyu .katex-display {
+display: inline-flex !important;
+margin-bottom: 0.75em !important;
+}
+#dezlbiqqyu div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+height: 0px !important;
+}
+</style>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false">
+  <thead>
+    <tr class="gt_heading">
+      <td colspan="2" class="gt_heading gt_title gt_font_normal gt_bottom_border" style>Total Antidepressant Prescriptions Per Year (2019-2022)</td>
+    </tr>
+    
+    <tr class="gt_col_headings">
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="year">Year</th>
+      <th class="gt_col_heading gt_columns_bottom_border gt_right" rowspan="1" colspan="1" scope="col" id="total_paid_items">Total Quantity</th>
+    </tr>
+  </thead>
+  <tbody class="gt_table_body">
+    <tr><td headers="year" class="gt_row gt_right">2019</td>
+<td headers="total_paid_items" class="gt_row gt_right">7,244,571</td></tr>
+    <tr><td headers="year" class="gt_row gt_right gt_striped">2020</td>
+<td headers="total_paid_items" class="gt_row gt_right gt_striped">7,521,164</td></tr>
+    <tr><td headers="year" class="gt_row gt_right">2021</td>
+<td headers="total_paid_items" class="gt_row gt_right">7,821,853</td></tr>
+    <tr><td headers="year" class="gt_row gt_right gt_striped">2022</td>
+<td headers="total_paid_items" class="gt_row gt_right gt_striped">7,995,040</td></tr>
+  </tbody>
+  
+</table>
+</div>
+<p>The table shows the total amount of antidepressants prescribed each
+year. The highest amount of antidepressants prescribed was in 2022 and
+the lowest was in 2019.</p>
+</div>
+<div id="figure-4" class="section level2">
+<h2>Figure 4:</h2>
+<pre class="r"><code>#Make a barchart with a trend line showing the amount of antidepressants prescribed each year and make it prettier.
+totals_per_year_barchart &lt;- totals_per_year_data %&gt;% 
+  mutate(year = as.numeric(year)) %&gt;% 
+  ggplot(aes(x = factor(year), y = total_paid_items)) + 
+  geom_col(aes(fill = factor(year)), show.legend = FALSE) + 
+  geom_text(aes(label = scales::comma(total_paid_items)), vjust = -0.5, size = 3.5) +
+  geom_smooth(aes(group = 1), method = &quot;lm&quot;, se = FALSE, color = &quot;red&quot;) +
+  labs(title = &quot;Total Antidepressant Prescriptions Per Year&quot;, x = &quot;Year&quot;, y = &quot;Total Quantity&quot;) +
+  scale_y_continuous(labels = comma) +
+  scale_fill_brewer(palette = &quot;Set2&quot;) +
+  theme_minimal(base_size = 15) +
+  theme(plot.title = element_text(face = &quot;bold&quot;, hjust = 0.5), axis.text.x = element_text(face = &quot;bold&quot;))
+#Print result
+totals_per_year_barchart</code></pre>
+<p><img role="img" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABUAAAAPACAMAAADDuCPrAAAB1FBMVEUAAAAAADUAADoAAF4AAGYANYQAOjoAOmYAOpAAXqgAZmYAZrY1AAA1NTU1NV41XoQ1hMk6AAA6ADo6OgA6Ojo6OmY6ZmY6ZpA6ZrY6kLY6kNtNTU1NTW5NTY5Nbm5Nbo5NbqtNjsheAABeNQBeXl5eqMleqOtmAABmADpmOgBmOjpmOmZmZjpmZmZmZpBmkJBmkLZmkNtmtttmtv9mwqVuTU1ubk1ubm5ubo5ujo5ujqtujshuq8huq+SENQCEyeuNoMuOTU2Obk2Obm6Ojm6Oq+SOyOSOyP+QOgCQZgCQZjqQZmaQkGaQkLaQtraQttuQ27aQ2/+oXgCoXjWo6+urbk2rbm6rjm6rjo6rq26ryOSr5P+2ZgC2Zjq2kDq2kGa2kJC2kLa2tpC2tra2ttu229u22/+2/7a2///Ijk3Ijm7Iq27Iq47I5OTI5P/I///JhDXJ6+vbkDrbkGbbtmbbtpDbtrbbttvb25Db27bb29vb2//b///kq27kq47kyI7kyKvk5Mjk5P/k///nisPrqF7ryYTryajrycnr66jr68nr6+v8jWL/AAD/tmb/tpD/yI7/25D/27b/29v/5Kv/5Mj/5OT//7b//8j//9v//+T///+rB39gAAAACXBIWXMAAB2HAAAdhwGP5fFlAAAgAElEQVR4nO29jbsk5X2m1z4hDJvxJjvLIPActEi7yRKwkDATLAdHzkqOEMaSsTaLlUQH4whBNIolOScMWRhGWKv9yGriszOM8OhM/7Pp6s96q96nuurX1c/TVee5r4uL01Vd/XF39T311VWTqTHGmBAT9Qswxpih4oAaY0wQB9QYY4I4oMYYE8QBNcaYIA6oMcYEcUCNMSaIA2qMMUEcUGOMCeKAGmNMEAfUGGOCOKDGGBPEATXGmCAOqDHGBHFAjTEmiANqjDFBHFBjjAnigBpjTBAH1BhjgjigxhgTxAGtce/KBHK93UPcfLHFnU7mj/jIj1q8kqY7bX0Jjc+z/UWMAvCBnFY+3qOrT3z5XfJLy9D1Q2n5WffPvvydgK/b2fJpvtvDc/SEA1pj54B++vrkcou7bZ/ZT7s9L3gJDij8QKoBmHPpDfLLq9HtQ2n9WffPvvw9eHaSeyPnry0Gt/l2sXBAa+wY0PO3r7T7iLfO7Kv5pfMsk76Eix7Qhg8kG4DJ5Br5FVbp8qF0+Kz7Z2/+zrLz/Wk2q1oc0Bq7BfTmc22Dt3VmL72QTvNM5SVc8IA2fSAgAOqCdvhQunzW/bM/f7mV+NX3oevq2F5xQGvsFNDlykcvAT3t8sT4JVzsgDZ+ICgA4o1s7T+UTp91/+zP3+pL+NjHm2HLqB7SCrwDmuFQAlpag+801zigZUIBTb63fAYf0B78rR56szB7gHuQpg5oMyedP7IeA7oI+dGXur6GDi/BAU2+pB8tVogP71sK6fRZ988e/a0WH9aPtBqg3kBdwQFtQhrQxdz52L++0nG+cUDLdAno7Fu62vZ2YF9TxGEFtFd/qxXB1Xs77WvZtl8c0CYaAnp+80uPF+Oe+E7yiebm6PO/mt91Mrn6uTdqm3Rgu5b/4l5b/h/MOOc3n5+NfPTJ95pfQsqHrxev54k3si/i/K+eL2bdq+iAvk9fn40+Kj9hadzzySj8UB/+6dX59+PRir7mUUBk6Q4dbdQCgI6U6eONzR7l21fn4/KvvvIcmTvUzbcIKJhRy3eoSdv6Tpa08rdlhoJve7USv9hstnynle8ifuxt88pW2y1xQJuAAT1/q7ShdP0xpFtPl5Odv5UM/L3Kg8OALh/s+nJGSl7EyWq+fX/9jE9+jF5C9Xk+Xa1nTS59tzay/GpLB/QtvxfXS+NLOXlt+VzvT8pfKPBQ0/KrTh+oedQWkS1tJNQDkCzo9PnGVjvMly/ld1Zf6txzlD+UBvMtPmswozZK2/5O2vprkAXUllm1ePFucnuQ8AeB5pUWT9sRB7QJFNDKfqajl3KDF5M9eG6Scvnj5MFhQE9Xo+/V1+FXc395Nlk80PYv1Vn5HtcqIz9NX+1T6dd8cr28Y6uyderou6uD9xbLDOihpsmrTh6ocdQ2kS1tZBwnapdvIgloD2+stsPl0o+wvFxAM+ZbBBTMqI3Str6T1v4aZOXVpqzGXdv8nXxb8AcB55U2T9sNB7QJENCzK5XPZzkLZeboZFd6Ors1B3Szcrb8q35Ax7WT5HHnd9j6pcoeY7AaufoFyGbGWz7h8m289FpuquVc+efPlofDh8rsul07aBi1VWRLGwntAtrDG6snafV55p4jE9Cc+Y7/WKZvFUvb9k7a+9s6Q1XUVjlZv7PVp1/uHf4g8LzS6mk74YA2kQ9orkHX6yPmk2UO9Fh9aM0BPds8bv1VLIZczbyGbV+q2lxXHrltxquSNCCdBj9Uzt7lraO2i2xpI6HVKnwPbyz78i9DeZmAVoj/Y7lKEJa25Z108NdhhsquSq9m1sc+zuxBavgXFc8rrZ62Ew5oE9mArg+weOnjzYat+QdUn6NXm76Lu57fTH9J0RzQ0tiz2oe9Xm4otvyst/dczr6E9HlW89al9+Y/ok5nr9PSg/5l6RHKM96ld2cTrm5dr4zcTIIfarlJ98Vbs7/vv32l5ajtIlvaSKgHYPWdvdzrG1u/kGJj4v23ypPlniMf0Jr5bZ81nlEbpTW/ky7+Ws1Q+NE3K/FfyexBwo/dMK+0e9ouOKBNZAO6+kXuYsP66sCN5b/Qld2iZ8kDpFszGwNafpz6Ovxq7l8OOkluNR1cnc7f65wmI5cPk2R7PeNdzjxjZa4sBuKHWu8USZRc3jKqhciWNhK2HIbT1xtbv6ZrydPmIj1/4GxAc+abD6RvnFEbpDW+ky7+2sxQyauokW5hKC8vNjx2w7zS8mk74IA2kQvo8jOoHuCb/uu3ntvuf/D2lx6vbElsE9DSGnzmZSznq8qqWrqWnv1SVTbxpw9U2d1/WhqV7hGtvOn1XDn/N//+x40PtXh1m/dy8ujnvvLDj0ovPDuqhciWNhLSAJx/9Pbjq3fS6xur/hO4vDmfLPMc2YBmzTd+1s0zaoO0xs+hi78WM1T5bWdItjgluWt47IZ5peXTdsABbSIX0NoKdTKg8fu6/PiSZYDGn1gun7n2lJVjOpaP2yKgyzl+vS0+ic1JOt36OKrNM2xeQmbZq7yJHz/U8tXlznnWMKpCTmRLGwnwp4iV7ZM7vrH0n8PiUR594svvfJQuvpf2j+QCmjXf5h9LMKM2SGv/OWzx12KG2rYbHJ4PouGxU5J5pe3TtscBbSIX0NqwZPGi4ft6vtoM1SKg6SJLeYmlNGnpC1ke3/ClSttSeeTl3+svXPmf7urSTPIk9YOnGx5qsxL1ZPUA54ZRLUS2tJGAAlDZiLjrG0uXj/JvuvwCm5Yj0zfUFNDmGbVBWtvPYZu/FjPU1t9QoVM6Nj12Mn06r/R/RlEHtIlMQDM/DMpsZKx+QPd/8KXNFv8WAa0sPeTn9tJKVvmhtge0tjW1vAts/STlf7pr5S0/Uv0Yk6aHKn/pjtJfiTSM2i6ypY0EEIDVQ/X2xk6q2jfkDtDJBDRvvttn3ZjXzHpK0+fQxl+LGWr7kiC4KkPTY6/IzCutn7Y1DmgTmYBmvpDlzTGZ0ed/9Xw6f7UIaOWJzybpo0YDWn919Z39VcqNzJe3tpDU+FDVA6kefWn9oA2jtovsL6Bgq2H8jWVatnlTtefIBjRvvttnncyoTdK2fA5t/bWYoVrsBq+flmnbY8+15eeV9k/bFge0iXYBLW/hqo0+f31SZXtAq/vd0/0ifQa0tHLZYn7Pl7e2kNQ8e9dGbn4f0zBqq8jeArr5RUtfb6xFQJPZIBPQvPmOAS3PqI3Smj6H9v5azFAtDmSvbb/a+tgN80r7p22LA9rE7gFtOCa5IaBg9qgcBV3dJjqQgFZ+Z10a0TSqg8h4QK9efaG8wtrXG8v8lqzhOZgBBdKaPqL2/mQBxfOKA8qlyyp8NqDllaEnvvNR273w6eFv1bmAG9DtG0/rI5seqpjg7eocvtkZAEZ1Edk5oOj3KH29sRYBTcbtdxW+TUCbPqLW/rrNUIhOAS2/8zmVeaX907bFAW1i522gqxJe+s6tafvjQPO/tyzdub+A1reBZrevxwLasKl+fmq2DWXF2VFdRO4/oB3fWItVeGJAy0JhQME7qdAqoC1nKERjQLOP3TCvOKBcdt0LXzmJYduAojV4+CvQveyFL9NmL3zpUZseavOY5Z2k15tHdRK5x4AG31jDykbLgO5pL3xTQLPvJKXZX4sZKhzQhsdumlccUC67HgdaORNdevAa/lahNfjYSmvT1yZzHGg2NbXDPzLHgZbmysZqJY+72tiWOR1keVQnkXsMaPCNVU/peu/K1Re+88Nb+efIBjRvfufjQLcEtP5OUpr9tZihwgFteOymecUB5ZILaJdfIlVWNFoGFK7Br+8dDmj1l0jl0yy2WNHcPGjml0ilCZse6qMP3v7S1c1LL//SGo/qJHKPAQ2+seo8U7rdNqBZ8zv/EikvreGddPHXdctFnnxAG6ZvmlccUC65gFbWECqHlmUDWjnN1raAVo/6LD1L8uP4QECX34XVDLR61GxdT4+e+PKfvXsruWNlvSj5yXh5rsQPdZKOKS8vNIzqJHKPAY29sVoESvdtG9Cs+cbPunlGbZDW9E46+ds+Q4UD2vDYTfOKA8olF9BWZ2NKTxKz/PAr60IooPlfSyRnRGyTjMoJQ7LLM+nZmO5lTyCXnlZj+ai5sz6W50r8UCslq4tElL4ILUa1EtloIye1Q0BDb2zdpMvJbAE2IOc/saz5xs+6zdmYstIa30kXf9tnqHhAt38QuXnFAeWSDehqDTt7msXVP/MvTc9vvre+a3r2zS2HMVWPmk+GttiFmr4EcIh09nygy6/Y0YvFG7tS/qZufpJcnGJiPWFyksVMAzIPtV6imp9t8sPXSy+gYVQnkY02EroHNPTGSq//3en67JVo+wcIaM5882fdOKM2SGt8J138bZ+h4gHFj900rzigXLIBze4kr/xMfTUsuztoS0Dz129dzdXXcpOmt9OXgEduqHzjSuTPfztJXmJursQPlT3E4Nq2UV1ENtrIqe4S0NAby/5mB5ckH9D6tNs+66YZtUla4zvp4G/7DLVDQPFjN8wrDiiXfEAz34bruXHXmq9ABAKalLL+pLUz7tYfKn0JlZGV+e7RK+WR9ZebLuk8moyvLHWncyV8KHx1i6ZRXUQ22sg57RLQ2BvLXBMpXULeFtC8+S2fddOM2iit8Z2097d9htohoPixG+YVB5QLCGj1l27lO5QCVcxX75fv99iHz5buDgKabtzZcFZ6ruZkVF5C5c7JFQsv/R/PJiPRVRxXM96Hpfyut5Hl50p8Qcja7wQ3vz7HozqIbLSREAlo7I3VonTpPfwcmYDmzW/7rBtm1GZpje+ktb8GWT0EFH8QeF5xQLmggKaX234KLKHM/9HezIrFhqryQb0goPk1+M1XJfc9qdxOX0L1zqVrZj/58YNnKyPLp2G4VLn0++xFbcZvriIO5krwUNPylqn5qDdajWovstFGznW3gMbe2Ox1lP/lql4wevsvkXLma++uNk/BGXWLtMZ30tZfg6w+Aoo/CDivOKBcYEBn3Hy9uH7B0RPfqX4Y529fnY+Yb4Kf3bz5/Pzm/CwL5TPr5gOK1uDXm3aKD3/bUdDJS6g/z6fzl361GFsN6LQ4Edj8jV1dvv7yqyqe+8PiF35HT76XHVl5L7mHWoz5wZfmF4Q8uvqV6p4dOKq1yEYbCbGABt/YzPu35+MeLZ9is8NPOevma+8uN0/lZ9StB9I3vpMlLQK6fYbaQkNA8QeB5hUH1Ejof8Yz7bD5w8YBNS3w11iFzR82Dqhpgb/GKmz+sHFATQv8NVZh84eNA2pa4K+xCps/bBxQ0wJ/jVXY/GHjgJoW+GuswuYPGwfUtMBfYxU2f9g4oKYF/hqrsPnDxgE1LfDXWIXNHzYOqDHGBHFAjTEmiANqjDFBHFBjjAnigBpjTBAH1BhjgjigxhgTxAE1xpggDqgxxgRxQI0xJogDaowxQRxQY4wJ4oAaY0wQB9QYY4I4oMYYE8QBNcaYIA6oMcYEcUCNMSaIA2qMMUEcUDV37txRvwQ5djC1hILhOXBA1QxvnukfO5haQsHwHDigaoY3z/SPHUwtoWB4DhxQNcObZ/rHDqaWUDA8Bw6omuHNM/1jB1NLKBieAwdUzfDmmf6xg6klFAzPgQOqZnjzTP/YwdQSCobnwAFVM7x5pn/sYGoJBcNz4ICqGd480z92MB2RhJPJhsvJmJvPTSZHT32cv3man2b66fOzYU+8Vx5078rRd/FYKg6omtF8b3bADqYjkoACer4csYxf5eZmsjSgZ8t7XS890GvriTJjuTigakbzvdkBO5iOUcLJ5JEfJTcnj703PX9rWb/KzQfPzv5fd3DvSnGvTzfJnM6XVZe3cmO5OKBqxve96Y4dTEcoYbZ0WF4wnMVusWx5Ov9/5ebs9mMfZxycTB4r1vFnC52XSw+0CmZmLBkHVM3ovjcB7GA6PgkPnk2rdrqq3nxZs3pzltvLGQezB1lE+Gy9NDur5QvrpdbaWDYOqJqxfW8i2MF0fBJOKuvVy6XFeQGv127Ogno942BdxnUriyXWs+VDZ8aycUDVjO17E8EOpqOTMFvRvpYMOFkvkJ4UYyo3pyeP/Pnrs3Xz//LdZKLTUmavLR/3kR+tAlofS8cBVTOy700IO5iOTsJJda16XczFFsvKzdky5JJr6USbRF5e/v/69Gy9H6oylo8DqmZk35sQdjAdm4TqFtBicXGzvn25dnO2wHr04sd3/t//OS1oeTn18uJRLk9LAb1cux8ZB1TNuL43MexgOjYJp7Uji9br9KeTZTHLNxe77GcO0iXXaiIXh9A7oGbNuL43MexgOjIJs3Xqxz6uDDuZTJ76uDjwc3GsfOXmnJmD2QLptfI0SSKX2zodULNmVN+bIHYwHZmE2fJlbbf4rH6LjZyL2lVuzpk5SDdnVhK53GvkgJo1o/reBLGD6cgknOYOzDx/+0rxu/XVLvPKzYLCwUka0PJuotVv4L0TyawZ1fcmiB1MxyUhtwa/Jl1JT27WApoeqLQ+38jyJ/M+jMmM6nsTxQ6m45JQaWRK6VxK1ZuLVfjSpOmh8tWA+kB6M6rvTZTxOGg4ldv8vGurw8Tvv/149TRsv/qj/6y21ptOVD3h2/uPF6eDu9X7m9id3CbQ1Xr3cvW+cnOxNj6bEdJJ8z/WPPNPOc2K8cQjzngcwIC+lRwmfnalftT430xqAU0nqpzwbbUTRnYiogbOMq9qddzS8v+Vm4sp7tz5VWXlP3u6kDOfTMSsGE884ozQQeWHOGfzY3Y+fW1xgqJZNC7NFitXN+fMFi+rAU0nWp11Y/MMRy/NHuM52cJXA9l9SIsXfPPKspDpzeIcny9N7/yHf5aewil/wrozn87OrBhhPDozPgeVU7mVfohY5GLVl82+lvnhkJWAViZanPBtzWpVt3Fzo4qT8mLkysWD5xaLzJeW2y3Tm58ubxZVLU00fT9zyuTNAm5uLJXeAvqL7718fPz0Kz/NjPqsNqrNkL4mP3TGF4/ujM5B9YeM641183Ru1jhXJSgubvEPqwFNJ1qe8G3NeiFPdghkAyfpCvfyfZwXG34ffXGV1tzN3/qv3qtMlLtoR2kLwUgu6fHwx8dLvlYb98nLizFPf7PLkL4mP3hGF48Ao3NQPZXbejGxsm673AM9G3300r/LBDSZ6DS/p/kQA5ry4Nm2C4ilGaH9RFJ6CuiN42NU0LubUd9qP6SvyQ+f0cUjwNgc1E7ltloLr+7tWC5KPXj2qY+ntYBWJ1qe8O2J9IRvuR3eB8a9f9x2C2VpRmg/kZR+Avrr2RJgsf782ZuzpcDvJ6N+8/Xj42dmo37xjePjz/+s7ZC+Jh8AY4tHhLE5qJ3KrdjtPmvk/T+pnWR4ccdbs/9qAa1MlD/h23qfzOFy/ietX+FmRugwkZR+Anr7+PiLi79uVBdBZ6O+8Mvij4dvLke1GdLX5ANgbPGIMDIH9VO5zRaoFvtILlUuz1u6Yz2g6USLE75N77+1Kej8SKbfOfTQ3Gu/iXIzI3SYSEo/Ab2xXu68u07pglnTVqNmi6lF59oM6WvyITCyeIQYmYP6qdym0//7Snkf84JZ/0pLqpmAJhOtd6tslm8f/LdXZ/d48tAL2o6/KxjcjLDvgM5Wr1dJW4auzZC+Jh8CI4tHiHE5AKdy+53Fuduule9X3nxZD2huomn1wKUBrMPX+TvE4GaEPazCJ/txykFdjGszpK/Jh8C44hFjXA4yu3XOJusd6uuF06Kf5TDWApqbaDnh5fRuh74XaQXs5kUPaLEbZ74T6XvHlXXou6WtkrdXvds6pK/Jh8C44hFjXA4yP8M5KZ31YhnNaj/rAc1MtBpRDqjwd4zt2J7NCx/Q6WffWB1H9Ey6G7xctEXp2gzpa/IVd4xh8as/mvzn/1dl2L+c/IP1yMVf//GfTSb/TXKfWUD/1ZaJqiOyNw+ELtlMCnq45MrX1y+RigOYCl6p7MNxQM0F4z/+08k/qg6rtfA//NPJb/3z9D6tAzq7+Y/Sm4cT0GA2L3xAb6+PZH/61eoIB9RcJP79b0/+eXXY36ziuKzr7H+/9T9W7lMLaGWif7lasF08wfpmLth98G+3sXMsc2x91j3Q1kiufL3tRDr+w38znf79j6s/BjqMgB4y4IO5UIzKQdOp3Jb7g85zpw+qbQOtTLR63OVO/tJRTfs5FRGozV6yKWvnnF0s9RLQYh/SsmGfVH4M5IBuY1TxCDIqB+BUbqtLUF6e3yWz4zx7GFNposUJ3+ZnLbq+uvnx9P7rkz2djSlpzGhimWMXS70EtPk4JO+Fb2RU8QgyKgfZU7mtzn5cFLH0o8zy7zI3Ac1OVDvh2+p0cPs6m92/3cPSpjqVeXax1EtAy9m6nS4D+jjQbYwqHkFG5SB/Krfl1TneKP68d6VdQJOJpssTvh09ufqN4/n7yc3+uBjZ3LCLq94DWlmJ9i+RtjGqeAQZsYNDP5Vb37EcTjY37OJv36vw/i38NkYcj9aM2MFhnsrN2Syzi8leAlqczW5zas50GdBnY9rCiOPRmvE6OKhTuTmWeXZx2tfJREqHMSUnE1mcrPMntdN3bhnS1+QDYLzxaM94HRzAqdyczW3sYre/38Knv+WcDVkuiYZOKb/j5ENivPFojx1M+5bgbLZnF899XRPpzVXBltsgNwWc/rx2waLtQ3acfEg4HnYwJy6h71hejGxu2OVT6++qnH88vy7mT5Y3SwWMXFZzx8mHxGjicVI6Nic5PdBpOvR+cTBOeiHFX/1R7VzCBeevbQ5J/7S4HNCjL5W3DS6vyDYWus4I+8vm380fX501Hrt8avu7Lvzt3Q4o2nHy4TD+gJ4kQ89WB0GWjv/+m/rJ2AtKv+l5fzlVae9K9veQA6bljLCXWOZQZ43HLp/a/gJ6Y7f9OTtOPhxGE9A1lUuqPXi23Ll7VyaX3p0tUJbPxj5bRM0FdDb4kc2h5Zfem57/ZTnNs9EXJ6C0bG5QZ43HLp/a3gL68M2djsjccfIBMbqAVs+Qfu9K+aCc1VLl5roXxW+9MwGdD14GdH3n0jJp8XOesQdUkM0N6qzx2OVT21tAb++2Q3zHyQfE2AJauyTlWfn25vTpq5ML3XxuMvmH9YAWg6+ucrk+wdHmahmzB3phbwH9FwL6juWGxqfFEtRZ47HLrLKvgD78i1e332lvkw+JsQW0dna10/wle5a7gGa9PXqpfiKi+eCzVUBP6tdNO51czp03rh9IzfwXsmxuwBLUWeOxy6yyv22gph0jC+j6JJZrTh7582IP+hPvpoOX+Xvw7FMfZ87kNh98tlndr55x6N6VR3403ICKYpkDS1Bnjccus4oDqmZkAT2png1zc+62a9k73ppmL4leDF4FdPYQ1+enHnp0dVX1WVKvZ89c3A+9lTLhgLK5AUtQZ43HLrOKA6pmXAGtbQEtFkmPXvx4er9ydfPZ4M0dMwEtWAV0dt+XXksOYzotJh5GQPvOZj/dXIMlqLPGY5dZxQFVM66AntaiVrr0RGnZdLYIWbq1PaDJudmX208PMKC913JP2dyAJaizxmOXWcUBVTOqgG4OTqpTvrr5+WvJsU4tAlq5pNC16QEFdHjZ3IAlqLPGY5dZxQFVM6qAbg4zqrM5gmnez/L6/PaALrO8iPDp4qY4oMOLZQ4sQZ01HrvMKg6omlEFNHtBtRXra11U+9kioJspL69/Ay8J6DiyuQFLUGeNxy6zigOqZkwBbVqD3wS0uBraS8mYLQEtrfwXj7E+OUntV/d9UcvM2LK5AUtQZ43HLrOKA6pmTAEtb+assTqa89NnJ0eV9fwtAd2s/M//2nNA+47lIWZzA/agzhqPXeYWB1TNmAKa2wS6/hXRcmTxG6PqmveWgG62DCSF7nUV/mJlcwM2os4aj13mGwdUzZgCmkvaathy9T57ErptAV1vBE0OheojoBerlhmwGnXWeOwyAzmgasYU0Nw+pKKYL81W3J9bHLh0Osnsp98W0GKqJ2/NjwO9Vh4dDeiFz+YGLEmdNR6xmWiBA6pmTAFNTvqxOoK+SGdBkdHSDzvLv+3cBDQ5F94moNO3lpM8VXq2rgF1NjNgXeqs8egyE1VxQNWMK6ClfTrrFp4X1/A4enJ+DY97V2IBnX74fHEdkDfKz9YU0L5jObJsbsAfpjprPNrN3HkcUDVjCmjKg2fhQfUVSg7aT5TB2ewMlqnOGo/4DOeA6hlvQO/947Zr2CUH7Sda03csNSdUFoG1qrPGo+sMV8YBVTPagJ7/ScNB9SkbB+0n6j+bG9RVI4IFq7PGo+VcmsUBVTPagN5LrlzcyMbBton6zmb+MkHqqhHBqtVZ49F2Ns3hgPYCvKRv5iLoleuZ3/n3v13dF5JcSD370OUrpo8A8I9I77VszuYGddWIYAnqrPHYYc51QPsBBTR3EfTKoeS/+qPazuSTrQFtPGnH8EgCKsvmBnXViGAJ6qzx2GHOdUB7Jr2iRe4i6NXrmf9N7eq86YXUcw9dumL6KJgFVBbLHOqqEcES1Fnjscus4oD2SuWa6PWLoNeuZ37vt2sBTS+kXn/o8hXTB85BZXODumpEsAR11njsMqs4oH1SuSJQ/SLoteuZz27+19WAnuVOMbR56OSK6YPkQLO5QV01IliCOms8dplVHNA+qV0TfcVmv1Hleuank3/w71pdSH390OkV0/vn/+uXvmO5YeeXhh2oq0YES1BnjccuXxcHtEfq10RfsW5m5Xrms5v/qhbQ3IXUNw+dXDF9D/QQzYPO5gbsQF01IliCOms8dvm6OKA9Ursmem1M5Xrmxc071YBmL6Reeuhb0+mBBvSQa5kBO1BXjQiWoM4aj12+Lg5of9Svib5ifT7LyvXMi5u1gOYupF596IMK6LCyuQE7UFeNCJagzhqPXb4uDmh/1K+JvmR9EfTK9cznN2sBzV1IvfrQBxDQoWZzA3agrhoRLEGdNR67fF0c0N6AV1RbXwS9cj3zxc1aQNxGUi4AACAASURBVNdsrl9Re2hyQPuOpTKbG7ADddWIYAnqrPHY5evigPYGuib65iK+leuZL27igG6Ogqo9NCWg48zmBuxAXTUiWII6azx2+bo4oL0Bfl656WfleubLmzigm/MT1x56jwEdZyxzYAfqqhHBEtRZ47HL18UB7QuwBl+6CHrlcrzbr867Cmj9oXsP6MXJ5gZsQ101IliCOms8dvniOKB9kb8mevki6F0DurqQeuahewroRczmBuxFXTUiWII6azx2+Qo5oH2R3QSauwh65Vo+tVX46oXUcw8dCGjfsRxsN9dgV+qqEcES1Fnj0fGblOCA9kXuEmfZi6BvC2jlQurZh24fUGcTgqWpq0YES1BnjUe7b1IeB7QvcvuQshdB3xbQyoXUsw+9LaCOZQuwPnXViGAJ6qzxaPombcMB7YvMNdHzF0GHAc1eSL320Mu75gLqbHYCf5bqqhHBEtRZ44EdbMcB7YvMNdHzF0HfGtDkQuq1h17edRNQZzMI/izVVSOCJaizxqPpa70NB3Q/7Oma6H3HcsP6KdRZ44E1q6tGBEtQZ41Hy29qFgd0P/R6TXRCNjeos8YDfybqqhHBEtRZ49Hym5rFAd0LfVwTnRDLHOqs8cAO1FUjgiWos8aj5TcjiwO6F+LXRO87m52vd6HOGg/sQF01IliCOms8un5FyjigahYBVWdzgzprPLADddWIYAnqrPGIf1kcUD19XtC3j9ejzhoP7EBdNSJYgjprPHb5ujiganYPaL+vR501HtiBumpEsAR11njs8nVxQNV0C+j+X486azywA3XViGAJ6qzx2OXr4oCqaRNQ5utRZ40HdqCuGhEsQZ01Hrt8XRzQEv+dBpTNfT4nlqDOGg/sQF01IliCOms84sVwQBP2WawGeNncgCWos8YDO1BXjQiWoM4aj3gxHNAETrtqELu5BktQZ40HdqCuGhEsQZ01HvFiOKAJ5IgpwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL8ZFCeiddqirRgRLUGeNB3agrhoRLEGdNR4t83Anl5aLEdCWqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES9GjwF9+MlXj4+Pv/rqL+ujPvvey8fHT7/y025D+pq8A+qqEcES1FnjgR2oq0YES1BnjUe8GP0F9NezgM155mfVUZ8sRz39zS5D+pq8C+qqEcES1FnjgR2oq0YES1BnjUe8GL0FdN3P4+MvVJZB767HHH+r/ZC+Ju+EumpEsAR11nhgB+qqEcES1FnjES9GXwH9zddnS3+vztbj/3oW0q/VRj0zW7X+xTeOjz//s7ZD+pq8G+qqEcES1FnjgR2oq0YES1BnjUe8GH0F9Pa6XHeri6C3VwMevrlsa5shfU3eDXXViGAJ6qzxwA7UVSOCJaizxiNejJ4COgvX09+v/Vm9PVvNLzrXZkhfk3dEXTUiWII6azywA3XViGAJ6qzxiBejp4DOuvVFMGq2er1K2jJ0bYb0NXlH1FUjgiWos8YDO1BXjQiWoM4aj3gxegroXbzmPBu1buuN+T6eNkP6mrwj6qoRwRLUWeOBHairRgRLUGeNR7wYPQX0dpGt+aGY/+TVyqhyW2+verd1SF+Td0RdNSJYgjprPLADddWIYAnqrPGIF6OngN6YrTjfzh8HWi7aonRthvQ1+Yo77VBXjQiWoM4aD+xAXTUiWII6azxa5uFOrn19BfR/Wh+JmR5I5IAeJliCOms8sAN11YhgCeqs8WiZh70FtDh66Pi4+B3l3//4+Djdn+SAHiZYgjprPLADddWIYAnqrPFomYf9BvRr64Il+8EPI6AtUVeNCJagzhoP7EBdNSJYgjprPOLF6G0VfnP4ZWU/uAN6mGAJ6qzxwA7UVSOCJaizxiNejP4Cus5WJWHeC3+YYAnqrPHADtRVI4IlqLPGI16M/g5jagiojwM9QLAEddZ4YAfqqhHBEtRZ4xEvRn8H0q8TdjsNqH+JdJhgCeqs8cAO1FUjgiWos8YjXoz+fsq5Pnipsgzo38IfJliCOms8sAN11YhgCeqs8YgXo6+zMc2q+cVFuD7JHAjqszEdHliCOms8sAN11YhgCeqs8YgXo6+AFudTfuYny+NAM+cD/Unt9J1bhvQ1eTfUVSOCJaizxgM7UFeNCJagzhqPeDF6OyP97c054RcLg7OoLderQ6eU33HyIOqqEcES1FnjgR2oq0YES1BnjUe8GP1dE+nnq2t6vLJYld8UcD1qc8Gi7UN2nDyIumpEsAR11nhgB+qqEcES1FnjES9Gj1fl/Pu//v1ZwP7gJ8ubpQJGLqu54+RB1FUjgiWos8YDO1BXjQiWoM4aj3gx9nld+Nu7HFC08+Qh1FUjgiWos8YDO1BXjQiWoM4aj3gx9hnQGzvtz9l18hDqqhHBEtRZ44EdqKtGBEtQZ41HvBh7DOjDN3c5InPXyWOoq0YES1BnjQd2oK4aESxBnTUe8WLsMaC3d9shvuPkMdRVI4IlqLPGAztQV40IlqDOGo94MfYX0Id/Ub24B3PyIOqqEcES1FnjgR2oq0YES1BnjUe8GPvcBjpA1FUjgiWos8YDO1BXjQiWoM4aj3gxHNAEddWIYAnqrPHADtRVI4IlqLPGI14MBzRBXTUiWII6azywA3XViGAJ6qzxiBfDAU1QV40IlqDOGg/sQF01IliCOms84sVwQBPUVSOCJaizxgM7UFeNCJagzhqPeDEc0AR11YhgCeqs8cAO1FUjgiWos8YjXgwHNEFdNSJYgjprPLADddWIYAnqrPGIF8MBTVBXjQiWoM4aD+xAXTUiWII6azzixXBAE9RVI4IlqLPGAztQV40IlqDOGo94MRzQBHXViGAJ6qzxwA7UVSOCJaizxiNeDAc0QV01IliCOms8sAN11YhgCeqs8YgXwwFNUFeNCJagzhoP7EBdNSJYgjprPOLFcEAT1FUjgiWos8YDO1BXjQiWoM4aj3gxHNAEddWIYAnqrPHADtRVI4IlqLPGI14MBzRBXTUiWII6azywA3XViGAJ6qzxiBfDAU1QV40IlqDOGg/sQF01IliCOms84sVwQBPUVSOCJaizxgM7UFeNCJagzhqPeDEc0AR11YhgCeqs8cAO1FUjgiWos8YjXgwHNEFdNSJYgjprPLADddWIYAnqrPGIF8MBTVBXjQiWoM4aD+xAXTUiWII6azzixXBAE9RVI4IlqLPGAztQV40IlqDOGo94MRzQBHXViGAJ6qzxwA7UVSOCJaizxiNeDAc0QV01IliCOms8sAN11YhgCeqs8YgXwwFNUFeNCJagzhoP7EBdNSJYgjprPOLFcEAT1FUjgiWos8YDO1BXjQiWoM4aj3gxHNAEddWIYAnqrPHADtRVI4IlqLPGI14MBzRBXTUiWII6azywA3XViGAJ6qzxiBfDAU1QV40IlqDOGg/sQF01IliCOms84sVwQBPUVSOCJaizxgM7UFeNCJagzhqPeDEc0AR11YhgCeqs8cAO1FUjgiWos8YjXowtAT3/3z/e5bEHh7pqRLAEddZ4YAfqqhHBEtRZ4xEvxpaAPnh2cumNC9RQddWIYAnqrPHADtRVI4IlqLPGI16M7QGd8cS7uzzBkFBXjQiWoM4aD+xAXTUiWII6azzixWgV0Mnk6Mn3dnmOwaCuGhEsQZ01HtiBumpEsAR11njEi7F1J9LN5xcJnTz64gVYlVdXjQiWoM4aD+xAXTUiWII6azzixWixF/785nPLhl56Y5cnGgLqqhHBEtRZ44EdqKtGBEtQZ41HvBjtDmM6f/vKsqFPjntzqLpqRLAEddZ4YAfqqhHBEtRZ4xEvRuvjQD99fdnQo6du7fJ0h426akSwBHXWeGAH6qoRwRLUWeMRL0aXA+k/fH21OfSlsW4OVVeNCJagzhoP7EBdNSJYgjprPOLF6PhLpE//ZNyLoeqqEcES1FnjgR2oq0YES1BnjUe8GF0Cer7eI18k9Pd2edJDRV01IliCOms8sAN11YhgCeqs8YgXo31A1/U8+spic+jlXZ71QFFXjQiWoM4aD+xAXTUiWII6azzixWgZ0M2y52I3/IfFkU3Xd3naw0RdNSJYgjprPLADddWIYAnqrPGIF6NNQDf1fGJzIOjJZPLY+HYlqatGBEtQZ40HdqCuGhEsQZ01HvFibA3oetd7Zd/7vSuTR360y/MeJOqqEcES1FnjgR2oq0YES1BnjUe8GC1/Cz85evFWbYwDOmSwBHXWeGAH6qoRwRLUWeMRL0argOZOJTIb41X4IYMlqLPGAztQV40IlqDOGo94MVoENH8yu3tPfHmEv+pUV40IlqDOGg/sQF01IliCOms84sXYFtDfvUinU3ZA56izxgM7UFeNCJagzhqPeDF8TaQEddWIYAnqrPHADtRVI4IlqLPGI16MbddE+uCdH6aLoPd/8MJT410oVVeNCJagzhoP7EBdNSJYgjprPOLF2L4NtLKvfZyHL61QV40IlqDOGg/sQF01IliCOms84sXoHNBxHr60Ql01IliCOms8sAN11YhgCeqs8YgXo3NA3584oKMAS1BnjQd2oK4aESxBnTUe8WKggD54/mrB48UvkK6WKE4jMsLjP1eoq0YES1BnjQd2oK4aESxBnTUe8WLAJdDTCeTaLk932KirRgRLUGeNB3agrhoRLEGdNR7xYsCAnr+G+nlpvGvwDmiBOms8sAN11YhgCeqs8YgXA28D/U/ZVfgnXhj1kfXqqhHBEtRZ44EdqKtGBEtQZ41HvBiddyKNG3XViGAJ6qzxwA7UVSOCJaizxiNeDAc0QV01IliCOms8sAN11YhgCeqs8YgXo/MvkcaNumpEsAR11nhgB+qqEcES1FnjES+GfwufoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFigIDOVt3n6+7F/2uMeKVeXTUiWII6azywA3XViGAJ6qzxiBcDBLQ4kXKx92h9SY8yI96tpK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYaCfS/Y8+urX8f41buzzdYaOuGhEsQZ01HtiBumpEsAR11njEi3FR9sLfaYe6akSwBHXWeGAH6qoRwRLUWePRMg93cmm5GAFtibpqRLAEddZ4YAfqqhHBEtRZ4xEvhq+JlKCuGhEsQZ01HtiBumpEsAR11njEi+FrIiWoq0YES1BnjQd2oK4aESxBnTUe8WL4mkgJ6qoRwRLUWeOBHairRgRLUGeNR7wYviZSgrpqRLAEddZ4YAfqqhHBEtRZ4xEvhq+JlKCuGhEsQZ01HtiBumpEsAR11njEi+FrIiWoq0YES1BnjQd2oK4aESxBnTUe8WL4mkgJ6qoRwRLUWeOBHairRgRLUGeNR7wYviZSgrpqRLAEddZ4YAfqqhHBEtRZ4xEvhi/pkaCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYviaSAnqqhHBEtRZ44EdqKtGBEtQZ41HvBj+LXyCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvRJqD333nnnW+/sOHL412pV1eNCJagzhoP7EBdNSJYgjprPOLF2B7Qm8/5jPRjBEtQZ40HdqCuGhEsQZ01HvFibA3omS/pMU6wBHXWeGAH6qoRwRLUWeMRL8a2gOYuiuSAjgEsQZ01HtiBumpEsAR11njEi7EtoMVP4i+98dEuTzAk1FUjgiWos8YDO1BXjQiWoM4aj3gxth0H+tqoT75UQ101IliCOms8sAN11YhgCeqs8YgXY/svkSbXd3n0gaGuGhEsQZ01HtiBumpEsAR11njEi+Gfciaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBjbt4EefXeXRx8Y6qoRwRLUWeOBHairRgRLUGeNR7wYLfbCj/gE9DXUVSOCJaizxgM7UFeNCJagzhqPeDG2BXTcVzGuoa4aESxBnTUe2IG6akSwBHXWeMSLsfWXSLNF0Mfe2+XxB4W6akSwBHXWeGAH6qoRwRLUWeMRL8bWgJ6/NZlMnvjOOyVGfIZQddWIYAnqrPHADtRVI4IlqLPGI16MFseB+qecowRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvxrZtoPc/qnNrl6c7bNRVI4IlqLPGAztQV40IlqDOGo94MXxJjwR11YhgCeqs8cAO1FUjgiWos8YjXgwHNEFdNSJYgjprPLADddWIYAnqrPGIF8MBTVBXjQiWoM4aD+xAXTUiWII6azzixQgE9PwDHwc6ArAEddZ4YAfqqhHBEtRZ4xEvRouAnieX5Hz+ce+FHwVYgjprPLADddWIYAnqrPGIF6PdL5F8GNP4wBLUWeOBHairRgRLUGeNR7wYWwN64uNAxwmWoM4aD+xAXTUiWII6azzixWhxNqaUo8/92Xg3gTqgBeqs8cAO1FUjgiWos8YjXow2V+V8aXVe5fP3Zzm9vMuTHTrqqhHBEtRZ44EdqKtGBEtQZ41HvBgtrspZFHN1XuUHz437InPqqhHBEtRZ44EdqKtGBEtQZ41HvBgtAloE82y15DlbpR/zZY7VVSOCJaizxgM7UFeNCJagzhqPeDFaXlRuc2L6k1EvgqqrRgRLUGeNB3agrhoRLEGdNR7xYrQM6Oz/y4vLzVI64q2g6qoRwRLUWeOBHairRgRLUGeNR7wYLQO6WpWfDxnxOry6akSwBHXWeGAH6qoRwRLUWeMRL8b2baCLVfeT1dU5x32leHXViGAJ6qzxwA7UVSOCJaizxiNejG2HMa02eZ6u9iI5oCMBS1BnjQd2oK4aESxBnTUe8WK0OA50Hs6zyXLNffaHAzoGsAR11nhgB+qqEcES1FnjES9Gm18iXVv+f74oejLxNtBRgCWos8YDO1BXjQiWoM4aj3gxtgW02HtULHIW/z968aMPi5vXdnm6w0ZdNSJYgjprPLADddWIYAnqrPGIF2PryUSKRc9inf3sIpxLxAEtUGeNB3agrhoRLEGdNR7xYmw/H+i95xbJPF0FdMTH0TugBeqs8cAO1FUjgiWos8YjXow2J1S++bvzZc6bjxf5vPTdXZ7s0FFXjQiWoM4aD+xAXTUiWII6azzixeh0SY/777xza5enOnzUVSOCJaizxgM7UFeNCJagzhqPeDF8UbkEddWIYAnqrPHADtRVI4IlqLPGI14MBzRBXTUiWII6azywA3XViGAJ6qzxiBfDAU1QV40IlqDOGg/sQF01IliCOms84sXY9lv4P32hzpd9IP0IwBLUWeOBHairRgRLUGeNR7wY28/G5IvKjRMsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYnQO6CWvwo8DLEGdNR7YgbpqRLAEddZ4xIvRZSfS+UdvPz7qX8I7oHPUWeOBHairRgRLUGeNR7wYHffCn5+Mu6DqqhHBEtRZ44EdqKtGBEtQZ41HvBhdD2NaXiF+rKirRgRLUGeNB3agrhoRLEGdNR7xYnQ+DvRs1Iug6qoRwRLUWeOBHairRgRLUGeNR7wYnQPqi8qNBCxBnTUe2IG6akSwBHXWeMSLEQmoD2MaA1iCOms8sAN11YhgCeqs8YgXo3NA711xQEcBlqDOGg/sQF01IliCOms84sXoHNBTXxNpHGAJ6qzxwA7UVSOCJaizxiNejK4BLa7wcXmXpzts1FUjgiWos8YDO1BXjQiWoM4aj3gxtp1M5IN3yvzgSyO/poe6akSwBHXWeGAH6qoRwRLUWeMRL0bgt/AjXoN3QAvUWeOBHairRgRLUGeNR7wY3QM65uPoHdACddZ4YAfqqhHBEtRZ4xEvRteAHj014uVPB3SOOms8sAN11YhgCeqs8YgXY9tOpPsfJWyt569fPv5WfehnnEaQUQAAIABJREFU33v5+PjpV37abUhfk3dAXTUiWII6azywA3XViGAJ6qzxiBej50t6/Obrx5mAfjJrW8HT3+wypK/Ju6CuGhEsQZ01HtiBumpEsAR11njEi9FzQG8cZwJ693jNt9oP6WvyTqirRgRLUGeNB3agrhoRLEGdNR7xYvQb0Lu5ghVLpc/MVq1/8Y3j48//rO2QvibvhrpqRLAEddZ4YAfqqhHBEtRZ4xEvRiCgD76DtoQWHasH9Pbx8Rd+Wfzx8M3j46+1HdLX5N1QV40IlqDOGg/sQF01IliCOms84sXYFtDzm1+6Wux9f/Rz62yeTo5+L3vfWb0+/7/WAjob+vT3F3/++uV559oM6WvyjqirRgRLUGeNB3agrhoRLEGdNR7xYjQH9NPXk8shvVcMK37Mmf8t0mw58Fu3awGdLZaukrYMXZshfU3eEXXViGAJ6qzxwA7UVSOCJaizxiNejKaAnr9VPYj+qY+LU9KD0zHNFv6+Nq0H9O7x8RdXf9+Yj20zpK/JO6KuGhEsQZ01HtiBumpEsAR11njEi9EQ0CKV9Z9xnkzAKelny36zxcBsQNdbJW+verd1SF+Td0RdNSJYgjprPLADddWIYAnqrPGIFwMHdNnPR1/8aH5zfkXO2U14Xfgb83Xner/KQxalazOkr8lX3GmHumpEsAR11nhgB+qqEcES1Fnj0TIPd3LhQwE9mf9y86XSkJtXFouh2S2gy3A5oEMBS1BnjQd2oK4aESxBnTUeLfPQJaDFvqLJpXRZc7FQmj0d6Go/jgM6FLAEddZ4YAfqqhHBEtRZ49EyD10CepJbVz+Dp7O7sTyA/VAD2hJ11YhgCeqs8cAO1FUjgiWos8YjXgwU0PkCaHVdfT4wez67dcIc0KGAJaizxgM7UFeNCJagzhqPeDFQQE9zi5oni22g9Z3wv355dRyR98IPBSxBnTUe2IG6akSwBHXWeMSLgQKaO1qpuCDnX2Y3gt4+TikvA/o40MMES1BnjQd2oK4aESxBnTUe8WKAgBa7i2qr6rOoXivW4usbQZsC6l8iHSZYgjprPLADddWIYAnqrPGIFwMEtDgTfXUX0vnJrKm5Ec0B9W/hDxMsQZ01HtiBumpEsAR11njEi9EhoLOE/j9gxIbMJkifjekgwRLUWeOBHairRgRLUGeNR7wYnQLaNGJJJqDzk3X+pHb6zi1D+pq8G+qqEcES1FnjgR2oq0YES1BnjUe8GF22gRbkt4Fu2AR0FrXlenXolPI7Th5EXTUiWII6azywA3XViGAJ6qzxiBejaS987iebZ+inSEtyAZ3+vHbBou1Ddpw8iLpqRLAEddZ4YAfqqhHBEtRZ4xEvRtNxoLlQwpMxLckGNHJZzR0nD6KuGhEsQZ01HtiBumpEsAR11njEi9H0S6TMOjwYnOf2LgcU7Tx5CHXViGAJ6qzxwA7UVSOCJaizxiNeDBTQ+XlDahs780MRN3ban7Pr5CHUVSOCJaizxgM7UFeNCJagzhqPeDHgyUTm5w15qjLwBJ7NLsPDN3c5InPXyWOoq0YES1BnjQd2oK4aESxBnTUe8WJsOR/oU+WlzU/x2exy3N5th/iOk8dQV40IlqDOGg/sQF01IliCOms84sXAAS2O+JxMjp66tbx9/60r8GR2OR7+xau7vKwdJw+irhoRLEGdNR7YgbpqRLAEddZ4xIvRcE2kB88tL4R09eoLV6+urszZcBD9CFBXjQiWoM4aD+xAXTUiWII6azzixWi8KmdyUeNJbZV+hKirRgRLUGeNB3agrhoRLEGdNR7xYjRfF/7mc0k+L72xyxMNAXXViGAJ6qzxwA7UVSOCJaizxiNejOaATqf3FxfjLK7H+ZX3dnmaYaCuGhEsQZ01HtiBumpEsAR11njEi7EtoAX3P/roo1u7PMVwUFeNCJagzhoP7EBdNSJYgjprPOLFaBPQC4S6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEiwECev7BO5gfjve09OqqEcES1FnjgR2oq0YES1BnjUe8GCCgiyvKAR4Z73WR1FUjgiWos8YDO1BXjQiWoM4aj3gxHNAEddWIYAnqrPHADtRVI4IlqLPGI14MBzRBXTUiWII6azywA3XViGAJ6qzxiBcD7UQqLuOBuLXL0x026qoRwRLUWeOBHairRgRLUGeNR7wY3gufoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYgYCef+DjQEcAlqDOGg/sQF01IliCOms84sVoEdDzd779wobnH/de+FGAJaizxgM7UFeNCJagzhqPeDG2BvT8LR/GNEqwBHXWeGAH6qoRwRLUWeMRL8bWgJ74ONBxgiWos8YDO1BXjQiWoM4aj3gxtgX03pVKPY8+92fj3QTqgBaos8YDO1BXjQiWoM4aj3gxtgX0dNbMl6bnr02OvjtbnX9/ltPLuzzZoaOuGhEsQZ01HtiBumpEsAR11njEi7EloLNyzos56+i14vaD5yaT67s824GjrhoRLEGdNR7YgbpqRLAEddZ4xIvRIqBFMM9WS56zVfrHvAo/BrAEddZ4YAfqqhHBEtRZ4xEvxpaAPnh2scto1s3lrqOTUS+CqqtGBEtQZ40HdqCuGhEsQZ01HvFitAzo7P/FRtDpPKUj3gqqrhoRLEGdNR7YgbpqRLAEddZ4xIvRMqCrVfn5kBGvw6urRgRLUGeNB3agrhoRLEGdNR7xYmzfBrpYdT9Z7kVaJ3WcqKtGBEtQZ40HdqCuGhEsQZ01HvFibDuMabXJ83S1F8kBHQlYgjprPLADddWIYAnqrPGIF6PFcaDzcJ5Nlmvusz8c0DGAJaizxgM7UFeNCJagzhqPeDHa/BLp2vL/80XRk4m3gY4CLEGdNR7YgbpqRLAEddZ4xIuxLaDF3qNikbP4/9GLH31Y3Ly2y9MdNuqqEcES1FnjgR2oq0YES1BnjUe8GFtPJlIsehbr7GcX4VwiDmiBOms8sAN11YhgCeqs8YgXY/v5QO89t0jm6SqgIz6O3gEtUGeNB3agrhoRLEGdNR7xYrQ5ofLN350vc958vMjnpe/u8mSHjrpqRLAEddZ4YAfqqhHBEtRZ4xEvRqdLetx/551buzzV4aOuGhEsQZ01HtiBumpEsAR11njEi+GLyiWoq0YES1BnjQd2oK4aESxBnTUe8WJs+yXSB+/8MD1o6f4PXnjKhzGNACxBnTUe2IG6akSwBHXWeMSL0fK38Bs252UaI+qqEcES1FnjgR2oq0YES1BnjUe8GJ0D6p9yjgQsQZ01HtiBumpEsAR11njEi9E5oO9PHNBRgCWos8YDO1BXjQiWoM4aj3gxUEAfPH+1oDhy6dGrJYprzPmnnGMAS1BnjQd2oK4aESxBnTUe8WLAJdDTCcQ/5RwDWII6azywA3XViGAJ6qzxiBcDBnT+I/gsl8a7Bu+AFqizxgM7UFeNCJagzhqPeDHwNtD/lF2Ff+KFN8a7Au+AzlFnjQd2oK4aESxBnTUe8WJ03ok0btRVI4IlqLPGAztQV40IlqDOGo94MRzQBHXViGAJ6qzxwA7UVSOCJaizxiNejM6/RBo36qoRwRLUWeOBHairRgRLUGeNR7wY/i18grpqRLAEddZ4YAfqqhHBEtRZ4xEvRruAnn/w7RdeeOHF8S+MqqtGBEtQZ40HdqCuGhEsQZ01HvFitAnozec2hzC9sctTHT7qqhHBEtRZ44EdqKtGBEtQZ41HvBjbA3r+VnIU6IhPxTR1QOeos8YDO1BXjQiWoM4aj3gxtgf0pHIc/eVdnuzQUVeNCJagzhoP7EBdNSJYgjprPOLF2BrQ+U86n3y3+PP8w9dH/ktOB7RAnTUe2IG6akSwBHXWeMSLsS2gD56dTB55b31zdY3OsaKuGhEsQZ01HtiBumpEsAR11njEi7EtoLMF0KPyZeSKgo74spzqqhHBEtRZ44EdqKtGBEtQZ41HvBjbAnpSXWU/HfVWUHXViGAJ6qzxwA7UVSOCJaizxiNejG2/RHotXQCdL4IO8Xygd9qhrhoRLEGdNR7YgbpqRLAEddZ4tMzDnVxafEmPEuqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvxkVZhW+JumpEsAR11nhgB+qqEcES1FnjES+GdyIlqKtGBEtQZ40HdqCuGhEsQZ01HvFitDiMKVljL44LHfGR9OqqEcES1FnjgR2oq0YES1BnjUe8GG0OpL+0OZD+0+cmY94E6oAWqLPGAztQV40IlqDOGo94MVr9lPPoqVvzvz99/Yp/yjkWsAR11nhgB+qqEcES1FnjES/G1oCur855dfn/Ee9CckDnqLPGAztQV40IlqDOGo94MVqczu715GRMT465nw5ogTprPLADddWIYAnqrPGIF8MnVE5QV40IlqDOGg/sQF01IliCOms84sVod0mP+z/40xdeeOHLf3ZrlycaAuqqEcES1FnjgR2oq0YES1BnjUe8GL6oXIK6akSwBHXWeGAH6qoRwRLUWeMRLwYI6PkH71ys6xkvUVeNCJagzhoP7EBdNSJYgjprPOLFAAGdn0d5xMd7ItRVI4IlqLPGAztQV40IlqDOGo94MRzQBHXViGAJ6qzxwA7UVSOCJaizxiNeDAc0QV01IliCOms8sAN11YhgCeqs8YgXwwFNUFeNCJagzhoP7EBdNSJYgjprPOLFcEAT1FUjgiWos8YDO1BXjQiWoM4aj3gxHNAEddWIYAnqrPHADtRVI4IlqLPGI14MBzRBXTUiWII6azywA3XViGAJ6qzxiBfDAU1QV40IlqDOGg/sQF01IliCOms84sVwQBPUVSOCJaizxgM7UFeNCJagzhqPeDEaAgoZcVnVVSOCJaizxgM7UFeNCJagzhqPeDEc0AR11YhgCeqs8cAO1FUjgiWos8YjXgwHNEFdNSJYgjprPLADddWIYAnqrPGIF6MhoEefeyHPl8d7lhF11YhgCeqs8cAO1FUjgiWos8YjXgzvREpQV40IlqDOGg/sQF01IliCOms84sVwQBPUVSOCJaizxgM7UFeNCJagzhqPeDEc0AR11YhgCeqs8cAO1FUjgiWos8YjXgwHNEFdNSJYgjprPLADddWIYAnqrPGIF8MBTVBXjQiWoM4aD+xAXTUiWII6azzixXBAE9RVI4IlqLPGAztQV40IlqDOGo94MRzQBHXViGAJ6qzxwA7UVSOCJaizxiNeDAc0QV01IliCOms8sAN11YhgCeqs8YgXwwFNUFeNCJagzhoP7EBdNSJYgjprPOLF8HXhE9RVI4IlqLPGAztQV40IlqDOGo94MRzQBHXViGAJ6qzxwA7UVSOCJaizxiNeDAc0QV01IliCOms8sAN11YhgCeqs8YgXwwFNUFeNCJagzhoP7EBdNSJYgjprPOLFcEAT1FUjgiWos8YDO1BXjQiWoM4aj3gxHNAEddWIYAnqrPHADtRVI4IlqLPGI14MBzRBXTUiWII6azywA3XViGAJ6qzxiBfDAU1QV40IlqDOGg/sQF01IliCOms84sVwQBPUVSOCJaizxgM7UFeNCJagzhqPeDEc0AR11YhgCeqs8cAO1FUjgiWos8YjXgwHNEFdNSJYgjprPLADddWIYAnqrPGIF8MBTVBXjQiWoM4aD+xAXTUiWII6azzixXBAE9RVI4IlqLPGAztQV40IlqDOGo94MRzQBHXViGAJ6qzxwA7UVSOCJaizxiNeDAc0QV01IliCOms8sAN11YhgCeqs8YgXwwFNUFeNCJagzhoP7EBdNSJYgjprPOLFcEAT1FUjgiWos8YDO1BXjQiWoM4aj3gxHNAEddWIYAnqrPHADtRVI4IlqLPGI14MBzRBXTUiWII6azywA3XViGAJ6qzxiBfDAU1QV40IlqDOGg/sQF01IliCOms84sVwQBPUVSOCJaizxgM7UFeNCJagzhqPeDEc0AR11YhgCeqs8cAO1FUjgiWos8YjXgwHNEFdNSJYgjprPLADddWIYAnqrPGIF8MBTVBXjQiWoM4aD+xAXTUiWII6azzixXBAE9RVI4IlqLPGAztQV40IlqDOGo94MRzQBHXViGAJ6qzxwA7UVSOCJaizxiNeDAc0QV01IliCOms8sAN11YhgCeqs8YgXwwFNUFeNCJagzhoP7EBdNSJYgjprPOLFcEAT1FUjgiWos8YDO1BXjQiWoM4aj3gxHNAEddWIYAnqrPHADtRVI4IlqLPGI14MBzRBXTUiWII6azywA3XViGAJ6qzxiBfDAU1QV40IlqDOGg/sQF01IliCOms84sVwQBPUVSOCJaizxgM7UFeNCJagzhqPeDEc0AR11YhgCeqs8cAO1FUjgiWos8YjXgwHNEFdNSJYgjprPLADddWIYAnqrPGIF8MBTVBXjQiWoM4aD+xAXTUiWII6azzixXBAE9RVI4IlqLPGAztQV40IlqDOGo94MRzQBHXViGAJ6qzxwA7UVSOCJaizxiNeDAc0QV01IliCOms8sAN11YhgCeqs8YgXo7+APvzrrx4fH/+TV36aGffZ914+Pn66PKrNkL4m74C6akSwBHXWeGAH6qoRwRLUWeMRL0ZvAf1k1q8FfwjHPf3NLkP6mrwL6qoRwRLUWeOBHairRgRLUGeNR7wYfQX07vGGL+Jx32o/pK/JO6GuGhEsQZ01HtiBumpEsAR11njEi9FTQH/z9ePjZ34y++MX35gtBX6/Pu6ni1Gf/1nbIX1N3g111YhgCeqs8cAO1FUjgiWos8YjXoyeAnp3vdz58M3qIujt4+Mv/HI16mtth/Q1eTfUVSOCJaizxgM7UFeNCJagzhqPeDF6CuiNzarzr19exmzJrGmrRdLlqDZD+pq8I+qqEcES1FnjgR2oq0YES1BnjUe8GP0fxjRbnU4SVrq9DF2bIX1N3hF11YhgCeqs8cAO1FUjgiWos8YjXoz9B/RuaZV+saDaZkhfk3dEXTUiWII6azywA3XViGAJ6qzxiBej/4DerWwDvVvaKnl71butQ/qavCPqqhHBEtRZ44EdqKtGBEtQZ41HvBi9B3S2AJquQ5eLtihdmyF9Tb7iTjvUVSOCJaizxgM7UFeNCJagzhqPlnm4kytezwG9kdkJ74AeIFiCOms8sAN11YhgCeqs8WiZh/0H9OGN2oGYDuhhgiWos8YDO1BXjQiWoM4aj5Z52HtAi8MwqzvBDyOgLVFXjQiWoM4aD+xAXTUiWII6azzixeg1oJ/Vf4bkgB4qWII6azywA3XViGAJ6qzxiBejz4D++uXj42dqP6T0XvjDBEtQZ40HdqCuGhEsQZ01HvFi9BjQ28WZmOq/AvJxoIcJlqDOGg/sQF01IliCOms84sXoL6BFP3Mrz/4l0mGCJaizxgM7UFeNCJagzhqPeDF6C+jtzObPOf4t/GGCJaizxgM7UFeNCJagzhqPeDF6PB/o58HZ4H02poMES1BnjQd2oK4aESxBnTUe8WL0dz5QuOa8Oldo5fSdW4b0NXk31FUjgiWos8YDO1BXjQiWoM4aj3gxegro7eMy85Zumho6pfyOkwdRV40IlqDOGg/sQF01IliCOms84sXoJ6DFmjMO6PTntQsWbR+y4+RB1FUjgiWos8YDO1BXjQiWoM4aj3gx+glosQrdENDIZTV3nDyIumpEsAR11nhgB+qqEcES1FnjES/GPq8Lf3uXA4p2njyEumpEsAR11nhgB+qqEcES1FnjES/GPgN6Y6f9ObtOHkJdNSJYgjprPLADddWIYAnqrPGIF2OPAX345i5HZO46eQx11YhgCeqs8cAO1FUjgiWos8YjXow9BvT2bjvEd5w8hrpqRLAEddZ4YAfqqhHBEtRZ4xEvxv4C+vAvXhVOHkRdNSJYgjprPLADddWIYAnqrPGIF2Of20AHiLpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgXJaB32qGuGhEsQZ01HtiBumpEsAR11ni0zMOdXFouRkBboq4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddaxnfzYAAARw0lEQVR4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYDmiCumpEsAR11nhgB+qqEcES1FnjES+GA5qgrhoRLEGdNR7YgbpqRLAEddZ4xIvhgCaoq0YES1BnjQd2oK4aESxBnTUe8WI4oAnqqhHBEtRZ44EdqKtGBEtQZ41HvBgOaIK6akSwBHXWeGAH6qoRwRLUWeMRL4YDmqCuGhEsQZ01HtiBumpEsAR11njEi+GAJqirRgRLUGeNB3agrhoRLEGdNR7xYjigCeqqEcES1FnjgR2oq0YES1BnjUe8GA5ogrpqRLAEddZ4YAfqqhHBEtRZ4xEvhgOaoK4aESxBnTUe2IG6akSwBHXWeMSL4YAmqKtGBEtQZ40HdqCuGhEsQZ01HvFiOKAJ6qoRwRLUWeOBHairRgRLUGeNR7wYownoZ997+fj46Vd+utujqKtGBEtQZ40HdqCuGhEsQZ01HvFijCWgn8zyWfD0N3d6GHXViGAJ6qzxwA7UVSOCJaizxiNejJEE9O7xmm/t8jjqqhHBEtRZ44EdqKtGBEtQZ41HvBjjCOhvvn58/Mxs7f0X3zg+/vzPdnggddWIYAnqrPHADtRVI4IlqLPGI16McQT09vHxF35Z/PHwzePjr+3wQOqqEcES1FnjgR2oq0YES1BnjUe8GKMI6CybT39/8eevX16mNIa6akSwBHXWeGAH6qoRwRLUWeMRL8YoAjpbg19Vs9TSCOqqEcES1FnjgR2oq0YES1BnjUe8GKMI6N3j4y+u/r6x024kddWIYAnqrPHADtRVI4IlqLPGI16MsQR0veHztgPaDixBnTUe2IG6akSwBHXWeMSLMYqAlqN5N78X6U471FUjgiWos8YDO1BXjQiWoM4aj5Z5uJOrjwNqjDEtyNXHATXGmBbk6nMxAnrIgA/mQmEHU0soGJ4DB1TN8OaZ/rGDqSUUDM/BCALa3154CcObZ/rHDqaWUDA8B+MIaE/HgUoY3jzTP3YwtYSC4TkYQUD7+yWShOHNM/1jB1NLKBiegxEEtL/fwksY3jzTP3YwtYSC4TkYQUD7OxuThOHNM/1jB1NLKBiegzEEdH4+0J/0cD5QCcObZ/rHDqaWUDA8B2MIaG9npJcwvHmmf+xgagkFw3MwioBOf97PNZEkDG+e6R87mFpCwfAcjCOgPV2VU8Lw5pn+sYOpJRQMz8FIAjpghjfP9I8dTC2hYHgOHFA1w5tn+scOppZQMDwHDqia4c0z/WMHU0soGJ4DB1TN8OaZ/rGDqSUUDM+BA6pmePNM/9jB1BIKhufAAVUzvHmmf+xgagkFw3PggKoZ3jzTP3YwtYSC4TlwQNUMb57pHzuYWkLB8Bw4oGqGN8/0jx1MLaFgeA4cUDXDm2f6xw6mllAwPAcOqJrhzTP9YwdTSygYngMHVM3w5pn+sYOpJRQMz4EDqmZ480z/2MHUEgqG58ABVTO8eaZ/7GBqCQXDc+CAqhnePNM/djC1hILhOXBA1QxvnukfO5haQsHwHDigaoY3z/SPHUwtoWB4DhxQNcObZ/rHDqaWUDA8Bw6omuHNM/1jB1NLKBieAwdUzfDmmf6xg6klFAzPgQOqZnjzTP/YwdQSCobnwAFVM7x5pn/sYGoJBcNz4IAaY0wQB9QYY4I4oMYYE8QBNcaYIA6oMcYEcUCNMSaIA2qMMUEcUGOMCeKAGmNMEAfUGGOCOKDGGBPEATXGmCAOqDHGBHFAjTEmiANqjDFBHFBjjAnigBpjTBAH1BhjgjigxhgTxAE1xpggDuj++ds/fvn4+PgP/rdfrod89r3ZkKf/8N8kd/vN14+Pv7C+z8O//v35RLyXuVfaOGjpabjEJEyrs8agiTnIWjkIHNB989k3jpc88/3loNvLAU+/Wr5jMXT9Lfnk5dVEP6W+2v3QxkFrT0MlKGF1v1EENOYAWDkIHNA98+tVCYt55PvzQbc3Q761uePd49K35O7mLp8ffkHbOGjtaagEJRQks8aQiTkAVg4DB3S/PHzzuMT8S1CeHz7/s9UdF4ucy29J+S7D/+a0cdDa01AJSihIZo0hE3MArBwIDuh+mc8gxWr43xZ/zP/9vFHMB69OH/6fxf+/trjb4sZ69pj/s/w//HK57jL0xa82Dlp6Gi5BCbVZY8jEHGStHAwO6H65vf7M7y5bWOwQWPTgxvpr8berjTyLm/N/c7+Y/jVg2jho52nAxCTUZo1BE3OQs3I4OKD75ZOvfvXlxay/mleKf1A388N8tWWzHSi963LU0Ndf2zho5WnIxCTUZo1BE3OQsXJAOKAs5p/+t8o5WM89839jX72BAnpoay1xGhx0us+g6SKhNmuMhE4OGobocUBZ3F2m8HbayeW35JWfltZU5yvuiz9vHOBaS5wGB53uM2i6SKjNGiOhk4OGIXocUBLrKN7IBPSV4lCl0rdkns0//OX04Y+PxxTQJgdd7jNoOkmozxqjoJsDPOQAcEBJrBcls2vq02REehjTwW32CbPdQbv7DJpOEkq3D60cuxBxcKBrYw4oh/mi5Hx3epuAlg8vHk88WjhodZ9B003CkpEFNOQgM+QQcEAZPJz/47nZqrk1oOuC/vcvjyUebRy08jRkukpYMqqAxhxkrBwEDiiBxW8pnlkciQM3+6TfkvkpFv7gJ/OV+UNbbYnQxkE7TwOms4QlYwpozEHOykHggO6fxYdfXjtvEdAlh3jscIQ2Dlp6Gi7dJSwZUUBjDrJWDgIHdO/85hvJdkx46Fv2WzKS40DbOGjrabAEJCwZT0BjDvJWDgIHdN/M//EsnZAN/sKm9C357H/5469uTq0w+F/htHLQ2tNQiUhYMpqAxhwAKweBA7pnFh/+9zcD4G+8SzfXK+7zTaAHt+exK20ctPc0UEISlozDQNQBsnIQOKB75nZtIyY6y1DpWzKfrz7/0+lnXz/gWac9bRy09zRQYhI29xxDQGMOkJWDwAHdL5lD4tF5LsvfkhulaQa/ANrGQQdPwyQoYcFIAhpzcNi/KnFA90t6RHzp39gF5X9Xy9+S+SLoggM8dKMjbRx08DRMohLmjCSgMQfQykHggO6V9Gza5VMsFaTbxZNvyfqf3VcG/71p46CLp0ESl1AwjoDGHGArB4EDulcqqx+rTz97tcn0W/Lwx78/u8srP6G+3L3QxkEXT4NkBwnTsQQ05gBbOQgcUGOMCeKAGmNMEAfUGGOCOKDGGBPEATXGmCAOqDHGBHFAjTEmiANqjDFBHFBjjAnigBpjTBAH1BhjgjigxhgTxAE1xpggDqgxxgRxQI0xJogDaowxQRxQY4wJ4oCaEXMymUwe+VE67N6VyeTou5rXY8aGA2pGzINnZwW9nAw6f2026Jro9Zix4YCaMXM2qS5uns6GPPax6vWYkeGAmlFzUumlV+BNnzigZtTMV+JLa+wnXoE3PeKAmnGTrsSfeQXe9IkDakbOSWk/UrE86hV40x8OqBk5xVbPyfXF316BN/3igJqxc7o+GLS2An9+8/lip9ITbyRr9Z9++2oR3aMnvrMafFYsxH763GzY57z8ako4oGbszI/8vLz8I1mBf7/o5Jyjl9YDi06uB//eYlgR0PmSrDcAmAQH1Iye1aFLp5UV+NNJiaeWA8+ulIcu7z8L6H/x7Py290CZMg6oGT+Lg+eLPUjl/hVDj168NVsyff/xdSrnhz09+e7sr/MPX0/W/edLqe+/lHl4c3FxQM34ma/EXz9JV8CL5dJVT8/X44qqriN5uho6D+h15ks2w8ABNReAe1fKK+QLTsrnGSkWPFebSTdLqcVk82z68FGTxwE1F4HT2gbMIpnXkjvUC5kE1Ic/mToOqLkIzDdtJnvQZ3Es3z6r7WC//8Gfro8gPfMavMnigJoLQW0Z8mxSY5XI+z944fnHk4EOqMnjgJoLQbE2ngT0FAX05nP1gfXlU2MKHFBzIWgd0M3wJ77zr684oKYRB9RcCHIBrV7so2BxxOeX3/no42m6E8kBNRkcUHMhyAU008T56ZreKE/kgJoGHFBzIagFNH9kUjr0zNtATTMOqLkQ1AJa/WHngrSUJw6oacYBNReCWkA3dZyzXKNPSnnvigNqmnFAzYWgHtD5OZpWP3t/f7L4KWcx8HLpDsuJHFCTxwE1F4J6QBcHLM1PvLQ579L8tCOPrYc5oKYZB9RcCDIBnb5VPgh0GcjkB0q/89pyedQBNXkcUHMhyAW0dEb6yaX3asNmg06WO5ocUJPHATUXgmxAl9dEmjw6X5FfDXv78fWgVTgdUJPHATXGmCAOqDHGBHFAjTEmiANqjDFBHFBjjAnigBpjTBAH1BhjgjigxhgTxAE1xpggDqgxxgRxQI0xJogDaowxQRxQY4wJ4oAaY0wQB9QYY4I4oMYYE8QBNcaYIA6oMcYEcUCNMSaIA2qMMUEcUGOMCeKAGmNMEAfUGGOCOKDGGBPEATXGmCAOqDHGBHFAjTEmyP8PgP8evnU/p1AAAAAASUVORK5CYII=" width="672" /></p>
+<p>The barchart shows the total amount of antidepressants prescribed
+each year. The red line represents the trend line and the number above
+each bar the total for that year. Overall, there is a steady increase in
+antidepressant prescriptions from 2019 to 2022.</p>
+</div>
+<div id="interpretation-of-results-1" class="section level2">
+<h2>Interpretation of Results:</h2>
+<p>From figures 3 and 4 we see a steady increase in antidepressant
+prescriptions from 2019 to 2022. There is an increase from 2019
+(Pre-COVID) to 2020/2021 (during COVID) which could be due to the fact
+that, as previously mentioned, access to therapy/non-pharmacological
+options was limited during COVID so doctors were more likely to just
+prescribe antidepressants instead leading to a spike in antidepressant
+prescriptions during this time. However, out of all 4 years,
+antidepressant prescriptions were the highest after COVID (in 2022)
+which is not what would be expected if COVID was the sole cause of this
+increase.</p>
+<p>These results suggests that COVID may therefore only be responsible
+for a short-term peak in antidepressant prescriptions (in 2021/2022) -
+from the table/barchart we see that there is a greater increase from
+2019 - 2020, 2019 - 2021 and 2020 - 21 than from 2021 – 2022. In 2022
+the number of prescriptions still increased (just by less than in
+previous years) and was in fact the highest out of all the years -
+perhaps the increase was less than from 2019-2020/2021 as other options
+e.g. therapy were becoming more available again reducing reliance on
+antidepressants.</p>
+<p>The greatest increase was from 2019 to 2022 and while the spike in
+prescriptions during COVID (2020 - 2021) may have contributed to this
+rise, the results generally seem to follow the overall increasing trend
+in antidepressant prescriptions. Prescriptions have been increasing
+steadily for many years before COVID and they are still continuing to
+increase now, therefore it’s likely that even without COVID
+antidepressant prescriptions would have increased in 2020 and 2021
+although perhaps by less than what they did (Public Health Scotland,
+2021; Scottish Government, 2024). Among other things, reasons for this
+overall increasing trend include more people taking antidepressants
+long-term and more antidepressants that are better tolerated becoming
+available allowing people to take them for a longer time, people
+increasingly being more likely to get help for their condition,
+inadequate medication reviews and antidepressants being used for
+treating other conditions (Scottish Government, 2024).</p>
+</div>
+</div>
+<div id="conclusion" class="section level1">
+<h1>Conclusion:</h1>
+<p>In conclusion, COVID-19 is unlikely to have had a major impact on
+antidepressant prescriptions in Scotland, it may have accelerated the
+rise slightly/caused a short-term spike in antidepressant prescriptions
+(2020 - 2021) when other non-pharmacological options were limited but it
+is not the sole reason behind the overall increasing trend in
+antidepressant prescriptions. Antidepressant prescriptions have been on
+the rise for a number of years before COVID and are continuing to
+increase now for many reasons including more people taking
+antidepressants long-term. In addition, the type of antidepressants
+prescribed has also changed over the years, with SSRIs now tending to be
+favoured over other types of antidepressants possibly due to things like
+safety.</p>
+</div>
+<div id="references" class="section level1">
+<h1>References:</h1>
+<p>Chu, A. and Wadhwa, R. (2023) <em>Selective serotonin reuptake
+inhibitors</em>. StatPearls Publishing. Available at: <a href="https://www.ncbi.nlm.nih.gov/books/NBK554406/" class="uri">https://www.ncbi.nlm.nih.gov/books/NBK554406/</a> (Accessed:
+25/11/2025).</p>
+<p>Mind (2020) <em>Comparing antidepressants</em>. Available at: <a href="https://www.mind.org.uk/information-support/drugs-and-treatments/antidepressants/comparing-antidepressants/" class="uri">https://www.mind.org.uk/information-support/drugs-and-treatments/antidepressants/comparing-antidepressants/</a>
+(Accessed: 25/11/2025)</p>
+<p>National Health Service (NHS) (no date) <em>Antidepressants</em>.
+Available at: <a href="https://www.nhs.uk/medicines/antidepressants/" class="uri">https://www.nhs.uk/medicines/antidepressants/</a> (Accessed:
+25/11/2025)</p>
+<p>Open Prescribing (2025) <em>BNF 04: Central Nervous System</em>.
+Available at: <a href="https://openprescribing.net/bnf/04/" class="uri">https://openprescribing.net/bnf/04/</a> (Accessed:
+27/11/2025)</p>
+<p>Public Health Scotland (2021) <em>Medicines used in mental health:
+years between 2010/11 and 2019/20</em>. Available at: <a href="https://publichealthscotland.scot/publications/medicines-used-in-mental-health/medicines-used-in-mental-health-years-between-2010-to-2011-and-2019-to-2020/" class="uri">https://publichealthscotland.scot/publications/medicines-used-in-mental-health/medicines-used-in-mental-health-years-between-2010-to-2011-and-2019-to-2020/</a>
+(Accessed: 25/11/2025)</p>
+<p>Public Health Scotland (2025) <em>Glossary of terms</em>. Available
+at: <a href="https://publichealthscotland.scot/media/35873/open_data_glossary_of_terms.pdf" class="uri">https://publichealthscotland.scot/media/35873/open_data_glossary_of_terms.pdf</a>
+(Accessed: 26/11/2025)</p>
+<p>Scottish Government (2024) <em>Quality prescribing for
+antidepressants: guide for improvement 2024 to 2027</em>. Available at:
+<a href="https://www.gov.scot/publications/quality-prescribing-antidepressants-guide-improvement-2024-2027/pages/5/" class="uri">https://www.gov.scot/publications/quality-prescribing-antidepressants-guide-improvement-2024-2027/pages/5/</a>
+(Accessed: 25/11/2025).</p>
+<p>Taylor, D., Poulou, S. and Clark, I. (2024) The cardiovascular safety
+of tricyclic antidepressants in overdose and in clinical use,
+<em>Therapeutic Advances in Psychopharmacology</em>, 14, pp. 1 23.
+doi: 10.1177/20451253241243297. Available at: <a href="https://doi.org/10.1177/20451253241243297" class="uri">https://doi.org/10.1177/20451253241243297</a> (Accessed:
+25/11/2025)</p>
 </div>
 
 

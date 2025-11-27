@@ -1,217 +1,201 @@
 ---
-title: "Formative Assessment"
-output: html_document
-date: "2025-11-14"
+title: "Did COVID-19 Have an Effect on Antidepressant Prescriptions in Scotland?"
+date: "2025-11-26"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+# Global chunk options
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
+# Introduction:
 
-## Topic:
+I've chosen to look at the trends in prescribing antidepressants before (2019) during (2020 - 2021) and after (2022) the COVID - 19 pandemic in Scotland to determine whether COVID had an effect on antidepressant prescriptions. I chose to look at this as during the pandemic the number of people with depression likely increased so I thought it would be interesting to investigate if/how COVID influenced antidepressant prescriptions. In addition, I looked at the most prescribed antidepressants each year to compare whether or not these changed over time.
 
-I have chosen to look at the trends in prescribing antidepressants (BNF 0403) before (2019) during (2020-2021) and after (2022) COVID in Scotland to see whether COVID had an effect on antidepressant prescriptions. So far I have made a table which shows the top 10 most prescribed antidepressants in 2020 and a plot showing the total antidepressant prescriptions in 2020.
+Antidepressants are medications mainly used to treat depression but they're also used for a range of other conditions including Generalised Anxiety Disorder (GAD), Obsessive Compulsive Disorder (OCD), Post-Traumatic Stress Disorder (PTSD), eating disorders and neuropathic pain (National Health Service, no date). Many different types exist including Selective Serotonin Reuptake Inhibitors (SSRIs), Serotonin-Noradrenaline Reuptake Inhibitors (SNRIs), Noradrenaline and Specific Serotonergic Antidepressants (NASSAs), Tricyclic Antidepressants (TCAs) and Serotonin Antagonists and Reuptake Inhibitors (SARIs), there are also different forms e.g. tablets, capsules, liquid, patches and drops (Mind, 2020; National Health Service, no date).
 
-## Next Steps:
+All data is taken from/can be accessed at: https://www.opendata.nhs.scot/dataset/prescriptions-in-the-community. (Here I've used data from January to December, 2019 to 2022).
 
-Next I am going to add bars for 2019, 2021 and 2022 and make 1-2 more plots/graphs. I am going to calculate the top 10 most prescribed antidepressants for 2019, 2021 and 2022 next and combine this into one table showing the top 10 most prescribed antidepressants between 2019-2022 as I plan on comparing whether the most prescribed antidepressants differ between 2019-2022. I'm also going to try and tidy up my code.
-
-
-```{r, include = FALSE}
-#load libraries
+# Data Loading:
+```{r}
+#Load the libraries
 library(tidyverse)
 library(janitor)
 library(gt)
 library(here)
-library(dplyr)
+library(scales)
+library(vroom)
 ```
 
-```{r, include = FALSE}
-#load 2020 data
-jan20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/e5c841f2-3e16-428b-97db-0798ec7a5fb4/download/pitc202001.csv") %>% 
-  clean_names()
-jan20
-
-feb20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/af121e7c-4124-4955-92e9-a9580ccd469e/download/pitc202002.csv")%>% 
-  clean_names()
-feb20
-
-march20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/9581bd8d-5568-4462-93a6-6d7bfbbe7cbc/download/pitc202003.csv")%>% 
-  clean_names()
-march20
-
-april20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/9cdc0526-21ab-43de-b832-bc032cd31b24/download/pitc202004.csv")%>% 
-  clean_names()
-april20
-
-may20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/f2ffa7b3-3f93-470a-8125-880afb9aafe0/download/pitc202005.csv")%>% 
-  clean_names()
-may20
-
-june20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/64131d22-ab47-43ff-9674-ebe8ed7edbd7/download/pitc202006.csv")%>% 
-  clean_names()
-june20
-
-july20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/80b6ddb1-f09b-4d76-9927-da1e118b01ff/download/pitc202007.csv")%>% 
-  clean_names()
-july20
-
-august20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/5fd5f56e-d1d2-4f22-b4f7-224fbd50dca3/download/pitc202008.csv")%>% 
-  clean_names()
-august20
-
-sept20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/e1b0cfdd-d184-4ebc-bd93-f1a10d84ead0/download/pitc202009.csv")%>% 
-  clean_names()
-sept20
-
-oct20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/83bf4892-d246-41f8-a6ca-d44d18e2a2ca/download/pitc202010.csv")%>% 
-  clean_names()
-oct20
-
-nov20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/ab8aa642-2562-4abb-a360-5c5f9e7e349c/download/pitc202011.csv")%>% 
-  clean_names()
-nov20
-
-dec20 <- read_csv("https://www.opendata.nhs.scot/dataset/84393984-14e9-4b0d-a797-b288db64d088/resource/0c033702-4d88-4f2d-989c-a709b1f4529e/download/pitc202012.csv")%>% 
-  clean_names()
-dec20
+```{r}
+#Load 2019-2022 Data using functions and loops and freeing the memory to help prevent crashing while knitting.
+#Make function to read all CSV files for one year
+read_year_data <- function(year) {
+files <- list.files(here("data", as.character(year)), pattern = "\\.csv$", full.names = TRUE)
+#Make a list to store each file in  
+data_list <- vector("list", length(files))
+#Create loop to repeat this code for every file for that year 
+for(x in seq_along(files)) {
+#Use vroom() to read files quicker and clean_names to get clean column names
+df <- vroom(files[x], delim = ",", col_types = NULL, progress = FALSE) %>% clean_names()
+#Store the cleaned data in a list
+data_list[[x]] <- df
+#Free memory after each file using rm() and gc(), invisible(gc()) so that running gc() doesn't show a table of memory usage after knitting, } to close loop
+rm(df)
+invisible(gc())}
+#Combine all files for the year into one data frame, } to close function
+bind_rows(data_list)}
+#Make another function to filter out antidepressants for each year
+antidep_by_year <- function(df, year) {
+  df %>% 
+    select(bnf_item_code, bnf_item_description, number_of_paid_items) %>% 
+    filter(startsWith(bnf_item_code, "0403")) %>% 
+    group_by(bnf_item_code, bnf_item_description) %>% 
+    summarise(paid_items = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop") %>% 
+    mutate(year = year)}
+#Create a loop for 2019-2022 and list to store the results for each year
+years <- 2019:2022
+antidep_list <- vector("list", length(years))
+for(x in seq_along(years)) {
+  year <- years[x]
+#Load and combine all files for one year
+data_year <- read_year_data(year)
+#Filter antidepressants for each year and store in list
+antidep_list[[x]] <- antidep_by_year(data_year, as.character(year))
+#Free the memory again, } to close loop
+rm(data_year)
+invisible(gc())}
+#Combine all years into one and then free the memory again
+antidep2019_2022 <- bind_rows(antidep_list)
+rm(antidep_list)
+invisible(gc())
 ```
-
-```{r,include = FALSE}
-#select bnf_item_code + paid items and filter out antidepressants
-jan20_ad <- jan20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_jan20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-feb20_ad <- feb20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_feb20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-march20_ad <- march20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_mar20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-april20_ad <- april20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_apr20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-may20_ad <- may20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_may20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-june20_ad <- june20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_jun20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-july20_ad <- july20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_jul20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-august20_ad <- august20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_aug20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-sept20_ad <- sept20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_sep20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-oct20_ad <- oct20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_oct20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-nov20_ad <- nov20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_nov20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-
-dec20_ad <- dec20 %>% 
-select(bnf_item_code, number_of_paid_items) %>% 
-filter(startsWith(bnf_item_code, "0403")) %>% 
-group_by(bnf_item_code) %>% 
-summarise(paid_items_dec20 = sum(number_of_paid_items, na.rm = TRUE), .groups = "drop")
-```
-
-```{r, include = FALSE}
-#join data
-data2020 <- jan20_ad %>%
-  full_join(feb20_ad, by = "bnf_item_code") %>% 
-  full_join(march20_ad, by = "bnf_item_code") %>% 
-  full_join(april20_ad, by = "bnf_item_code") %>% 
-  full_join(may20_ad, by = "bnf_item_code") %>% 
-  full_join(june20_ad, by = "bnf_item_code") %>% 
-  full_join(july20_ad, by = "bnf_item_code") %>% 
-  full_join(august20_ad, by = "bnf_item_code") %>%
-  full_join(sept20_ad, by = "bnf_item_code") %>% 
-  full_join(oct20_ad, by = "bnf_item_code") %>% 
-  full_join(nov20_ad, by = "bnf_item_code") %>% 
-  full_join(dec20_ad, by = "bnf_item_code")
-```
-
-
-```{r, include = FALSE}
-#make a single paid items column 
-data2020 <- data2020 %>% 
-  mutate(paid_items_sum2020 = paid_items_jan20 + paid_items_feb20 + paid_items_mar20 + paid_items_apr20 + paid_items_may20 + paid_items_jun20 + paid_items_jul20 + paid_items_aug20 + paid_items_sep20 + paid_items_oct20 + paid_items_nov20 + paid_items_dec20) %>% 
-  select(bnf_item_code, paid_items_sum2020) %>% 
-  filter(!is.na(paid_items_sum2020))
-```
-
-```{r, include = FALSE}
-#total antidepressants in 2020
-antidepressants2020_total <- data2020 %>% 
-  summarise(total = sum(paid_items_sum2020, na.rm = TRUE))
-```
-
-```{r, echo=FALSE}
-#table
-antidepressants2020_table <- data2020 %>% 
-  mutate(paid_items_sum2020 = as.numeric(paid_items_sum2020)) %>% 
-arrange(desc(paid_items_sum2020)) %>% 
-  mutate(rank = row_number()) %>% 
-  select(rank, bnf_item_code, paid_items_sum2020) %>% 
-  slice_head(n = 10)
-
-antidepressants2020_table %>% 
-  gt() %>% 
-  tab_header(title = "Antidepressants (BNF 0403) 2020") %>% 
-  cols_label(rank = "Rank", bnf_item_code = "BNF Code", paid_items_sum2020 = "Quantity") %>% 
-  fmt_number(columns = paid_items_sum2020, decimals = 0, use_seps = TRUE) %>% 
+# Results:
+## Figure 1:
+```{r}
+#Use gt()to make a stacked table showing the top 10 antidepressants each year (2019-2022) and make it prettier.
+antideptop10 <- antidep2019_2022 %>% 
+  group_by(year) %>% 
+  arrange(desc(paid_items)) %>% 
+  slice_head(n = 10) %>% 
+  ungroup() %>% 
+  mutate(rank = row_number(), .by = year) %>% 
+  arrange(year, rank) %>% 
+  gt(groupname_col = "year") %>% 
+  tab_header(title = "Top 10 Most Prescribed Antidepressants Each Year (2019-2022)") %>% 
+  cols_label(rank = "Rank", year = "Year", bnf_item_code = "BNF Code", bnf_item_description = "BNF Item Description", paid_items = "Quantity") %>% 
+  fmt_number(columns = paid_items, decimals = 0, use_seps = TRUE) %>% 
   opt_stylize() %>% 
-  tab_options(table.font.size = px(14)) 
-  
+  tab_options(table.font.size = px(16), row_group.font.weight = "bold", row_group.background.color = "lavender", heading.background.color = "#f0f0f0")
+#Print result
+antideptop10
+```
+The stacked table shows the top 10 most prescribed antidepressants each year from 2019 to 2022. The BNF (British National Formulary) code is a unique 15 digit code that is assigned to each drug, the first 7 digits of this code are related to the BNF categories with the first 2 corresponding to the chapter and the next 2 to the section (in this case "0403" which corresponds to "central nervous system drugs" and "antidepressants" respectively) (Open Prescribing, 2025; Public Health Scotland, 2025). The BNF item description is the name, type and dosage of each antidepressant (Public Health Scotland, 2025). Quantity represents the total amount of each antidepressant that was prescribed and rankings for each year are shown on the right.
+
+## Figure 2:
+```{r}
+#Make a wide table to show a comparison of the top 10 antidepressants across all 4 years.
+antidep_10_across_all_years <- antidep2019_2022 %>% 
+  group_by(year) %>% 
+  arrange(desc(paid_items)) %>% 
+  slice_head(n = 10) %>% 
+  ungroup() %>% 
+  mutate(rank = row_number(), .by = year) %>% 
+  arrange(year, rank)
+#Pivot wider and use gt() to make the table and then make the table prettier.
+antidep_10_across_all_years_table <- antidep_10_across_all_years %>% 
+  select(rank, bnf_item_description, year, paid_items) %>% 
+  pivot_wider(names_from = year, values_from = paid_items) %>% 
+  arrange(rank) %>% 
+  gt() %>% 
+  tab_header(title = "Comparison of the Top 10 Most Prescribed Antidepressants 2019-2022") %>% 
+  cols_label(rank = "Rank", bnf_item_description = "Antidepressant", '2019' = "2019", '2020' = "2020", '2021' = "2021", '2022' = "2022") %>%
+  tab_spanner(label = "Quantity", columns = c('2019', '2020', '2021', '2022')) %>% 
+  fmt_number(columns = c('2019', '2020', '2021', '2022'), decimals = 0, use_seps = TRUE) %>%
+  sub_missing(columns = everything(), missing_text = "-") %>% 
+  opt_stylize() %>% 
+  tab_options(table.font.size = px(15), heading.background.color = "lavender", column_labels.background.color = "#f0f0f0", table.border.top.color = "black")
+#Print result
+antidep_10_across_all_years_table
+```
+The table shows a comparison of the top 10 most prescribed antidepressants from 2019 to 2022. On the left is the rank and on the right is the quantity/how much of each antidepressant was prescribed each year from 2019 - 2022. "-" indicates that for a particular year that antidepressant did not rank. 
+
+## Interpretation of Results:
+From the stacked and comparison tables (figures 1 and 2) we can see that some antidepressants e.g. Sertraline/Mirtazapine consistently remain in the top 10 across the years while others appear only in the top 10 for one year but not the others. SSRIs such as Fluoxetine, Sertraline and Citalopram and TCAs like Amitriptyline seem to dominate the top of the list while NASSAs like Mirtazapine also appear consistently but lower-ranked.
+
+Overall, these tables suggests that the type of antidepressants prescribed has changed over time. One particular example is the SSRI Sertraline - as seen from the table in figure 2, Sertraline prescriptions (regardless of dosage/formulation) tend to increase after 2019. There are likely many reasons why this happened, one being that SSRIs are first-line antidepressants (which in turn means they may be more likely to be prescribed) as they tend to be better tolerated, with fewer side effects, than other antidepressants e.g. TCAs (Chu and Wadhwa, 2023). This also  means they require less monitoring which makes them suitable in situations where going to a doctor/hospital is hard (as was often the case during COVID when only visits deemed essential were able to go ahead). These factors, along with the fact that during COVID access to therapy and other non-pharmacological options was limited so reliance on antidepressants was likely higher, could account for the increase in Sertraline prescriptions during COVID (2020 - 2021). In addition, SSRIs are safer in an overdose - this might have been another important consideration as during COVID depression/mental health problems increased so prescribing SSRIs could reduce the risk of fatal overdosing as death due to an SSRI overdose is much less likely compared to other antidepressants such as TCAs, meaning they can be given to at-risk patients (Taylor, Poulou and Clark, 2024).
+
+However, Sertraline prescriptions continued to increase and were actually even higher after COVID (in 2022) so perhaps there is another explanation for this increase.  Antidepressant prescriptions in Scotland have steadily been increasing over the years (even before COVID) and this overall increase can in part be attributed to the fact that more people in Scotland are taking antidepressants long-term rather than necessarily more people starting to take antidepressants (Public Health Scotland, 2021; Scottish Government, 2024). As previously mentioned, SSRIs are first-line antidepressants due to better tolerance/less side effects and less toxicity in overdose, TCAs on the other hand can cause heart issues e.g. arrhythmias even in normal clinical use - this makes SSRIs better suited for long-term use as less side effects (and the fact that they are a first-line antidepresant) means that not only may doctors be more likely to prescribe these but patients may also be more likely to continue taking them and therefore have better outcomes by continuing with their treatment which could be another reason why they are prescribed more (Taylor, Poulou and Clark, 2024).
+
+## Figure 3:
+```{r}
+#Make a table of the total antidepressant quantity for each year.
+totals_per_year_data <- antidep2019_2022 %>%
+  group_by(year) %>% 
+  summarise(total_paid_items = sum(paid_items, na.rm = TRUE), .groups = "drop") 
+#Use gt() to make the table and make the table prettier.
+totals_per_year_table <- totals_per_year_data %>% 
+  gt() %>% 
+  tab_header(title = "Total Antidepressant Prescriptions Per Year (2019-2022)") %>% 
+  cols_label(year = "Year", total_paid_items = "Total Quantity") %>% 
+  fmt_number(columns = total_paid_items, decimals = 0, use_seps = TRUE) %>% 
+  opt_stylize() %>% 
+  tab_options(table.font.size = px(16), heading.background.color = "lavender", column_labels.background.color = "#f0f0f0", table.border.top.color = "black")
+#Print result
+totals_per_year_table
+```
+The table shows the total amount of antidepressants prescribed each year. The highest amount of antidepressants prescribed was in 2022 and the lowest was in 2019.
+
+## Figure 4:
+```{r}
+#Make a barchart with a trend line showing the amount of antidepressants prescribed each year and make it prettier.
+totals_per_year_barchart <- totals_per_year_data %>% 
+  mutate(year = as.numeric(year)) %>% 
+  ggplot(aes(x = factor(year), y = total_paid_items)) + 
+  geom_col(aes(fill = factor(year)), show.legend = FALSE) + 
+  geom_text(aes(label = scales::comma(total_paid_items)), vjust = -0.5, size = 3.5) +
+  geom_smooth(aes(group = 1), method = "lm", se = FALSE, color = "red") +
+  labs(title = "Total Antidepressant Prescriptions Per Year", x = "Year", y = "Total Quantity") +
+  scale_y_continuous(labels = comma) +
+  scale_fill_brewer(palette = "Set2") +
+  theme_minimal(base_size = 15) +
+  theme(plot.title = element_text(face = "bold", hjust = 0.5), axis.text.x = element_text(face = "bold"))
+#Print result
+totals_per_year_barchart
 ```
 
-```{r, echo = FALSE}
-antidepressants_plot_2020 <- antidepressants2020_total %>% 
-  mutate(year = "2020") %>% 
-  ggplot(aes(x = year, y = total))+
-  geom_col(width = 0.6)+
-  geom_text(aes(label = scales::comma(total)), 
-vjust = -0.3, size = 4) +
-  scale_y_continuous(labels = scales::comma, expand = expansion(mult = c(0, 0.05)))+
-  labs(title = "Total Antidepressant Prescriptions (BNF 0403) 2019 - 2022", x = "Year", y = "Quantity")
+The barchart shows the total amount of antidepressants prescribed each year. The red line represents the trend line and the number above each bar the total for that year. Overall, there is a steady increase in antidepressant prescriptions from 2019 to 2022.
 
-antidepressants_plot_2020
+## Interpretation of Results:
+From figures 3 and 4 we see a steady increase in antidepressant prescriptions from 2019 to 2022. There is an increase from 2019 (Pre-COVID) to 2020/2021 (during COVID)  which could be due to the fact that, as previously mentioned, access to therapy/non-pharmacological options was limited during COVID so doctors were more likely to just prescribe antidepressants instead leading to a spike in antidepressant prescriptions during this time. However, out of all 4 years, antidepressant prescriptions were the highest after COVID (in 2022) which is not what would be expected if COVID was the sole cause of this increase.
 
-```
+These results suggests that COVID may therefore only be responsible for a short-term peak in antidepressant prescriptions (in 2021/2022) - from the table/barchart we see that there is a greater increase from 2019 - 2020, 2019 - 2021 and 2020 - 21 than from 2021 – 2022. In 2022 the number of prescriptions still increased (just by less than in previous years) and was in fact the highest out of all the years - perhaps the increase was less than from 2019-2020/2021 as other options e.g. therapy were becoming more available again reducing reliance on antidepressants.
+
+The greatest increase was from 2019 to 2022 and while the spike in prescriptions during COVID (2020 - 2021) may have contributed to this rise, the results generally seem to follow the overall increasing trend in antidepressant prescriptions. Prescriptions have been increasing steadily for many years before COVID and they are still continuing to increase now, therefore it’s likely that even without COVID antidepressant prescriptions would have increased in 2020 and 2021 although perhaps by less than what they did (Public Health Scotland, 2021; Scottish Government, 2024). Among other things, reasons for this overall increasing trend include more people taking antidepressants long-term and more antidepressants that are better tolerated becoming available allowing people to take them for a longer time, people increasingly being more likely to get help for their condition, inadequate medication reviews  and antidepressants being used for treating other conditions (Scottish Government, 2024).
+
+# Conclusion:
+In conclusion, COVID-19 is unlikely to have had a major impact on antidepressant prescriptions in Scotland, it may have accelerated the rise slightly/caused a short-term spike in antidepressant prescriptions (2020 - 2021) when other non-pharmacological options were limited but it is not the sole reason behind the overall increasing trend in antidepressant prescriptions. Antidepressant prescriptions have been on the rise for a number of years before COVID and are continuing to increase now for many reasons including more people taking antidepressants long-term. In addition, the type of antidepressants prescribed has also changed over the years, with SSRIs now tending to be favoured over other types of antidepressants possibly due to things like safety.
+
+# References:
+Chu, A. and Wadhwa, R. (2023) *Selective serotonin reuptake inhibitors*. StatPearls Publishing. Available at: https://www.ncbi.nlm.nih.gov/books/NBK554406/ (Accessed: 25/11/2025).
+
+Mind (2020) *Comparing antidepressants*. Available at: https://www.mind.org.uk/information-support/drugs-and-treatments/antidepressants/comparing-antidepressants/ (Accessed: 25/11/2025)
+
+National Health Service (NHS) (no date) *Antidepressants*. Available at: https://www.nhs.uk/medicines/antidepressants/ (Accessed: 25/11/2025)
+
+Open Prescribing (2025) *BNF 04: Central Nervous System*. Available at: https://openprescribing.net/bnf/04/ (Accessed: 27/11/2025)
+
+Public Health Scotland (2021) *Medicines used in mental health: years between 2010/11 and 2019/20*. Available at: https://publichealthscotland.scot/publications/medicines-used-in-mental-health/medicines-used-in-mental-health-years-between-2010-to-2011-and-2019-to-2020/ (Accessed: 25/11/2025)
+
+Public Health Scotland (2025) *Glossary of terms*. Available at: https://publichealthscotland.scot/media/35873/open_data_glossary_of_terms.pdf (Accessed: 26/11/2025)
+
+Scottish Government (2024) *Quality prescribing for antidepressants: guide for improvement 2024 to 2027*. Available at: https://www.gov.scot/publications/quality-prescribing-antidepressants-guide-improvement-2024-2027/pages/5/ (Accessed: 25/11/2025).
+
+Taylor, D., Poulou, S. and Clark, I. (2024) The cardiovascular safety of tricyclic antidepressants in overdose and in clinical use, *Therapeutic Advances in Psychopharmacology*, 14, pp. 1 23. doi: 10.1177/20451253241243297. Available at: https://doi.org/10.1177/20451253241243297 (Accessed: 25/11/2025)
+
+
+
+
